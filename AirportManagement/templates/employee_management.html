@@ -83,6 +83,15 @@
 							<label>Phone:</label>
 							<input type="number" class="form-control" name="e_phonenumber" id="e_phonenumber" required="1">
 						</div>
+						<div class = "form-group">
+							<label for="role">Role:</label>
+								<select id="role" name="role" class="form-control">
+									<option value="technician">Technician</option>
+									<option value="traffic">Traffic controller</option>
+									<option value="faa">FAA admin</option>
+									<option value="others">Others</option>
+								</select>
+						</div>
 						<div class="form-group">		  
 							<label>Salary:</label>
 							<input type="number" class="form-control" name="e_salary" id="e_salary" required="1">
@@ -236,7 +245,8 @@
 					"targets": -1,
 					"data": null,
 					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>/<button class='btn btn-danger  btn-sm' data-toggle='modal' data-target = '#delete_emp_modal'>Delete</a>",
-					"orderable": false						
+					"orderable": false,
+					"width": "81px"						
 					
 				}]
 			});
@@ -280,6 +290,7 @@
 						e_country : $('#e_country').val(),
 						e_pincode : $('#e_pincode').val(),
 						e_phonenumber : $('#e_phonenumber').val(),
+						role : $('#role').val(),
 						e_salary : $('#e_salary').val(),
 						username : $('#username').val(),
 						password : $('#password').val(),

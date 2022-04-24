@@ -291,6 +291,7 @@ def insert_employee_details(request):
         e_country = request.POST['e_country']
         e_pincode = request.POST['e_pincode']
         e_phonenumber = request.POST['e_phonenumber']
+        role = request.POST['role']
         e_salary = request.POST['e_salary']
         username = request.POST['username']
         password = request.POST['password']
@@ -316,12 +317,22 @@ def insert_employee_details(request):
                                      '{}', '{}', '{}')
                                     """.format(e_ssn, e_name, e_street, e_state, e_city, e_country,
                                     e_pincode, e_phonenumber, e_salary, username, password, e_uid, union_membership_number)
-                                    
-    print(query)
+    
+    table_name = ''                                    
+    if role == "technician":
+        table_name = "technicians"
+    elif role == "traffic":
+        table_name = "traffic_controllers"
+    elif role == 'faa':
+        table_name = 'faa_admin'
+    
+    query2 = "INSERT INTO " + table_name + "(e_ssn) VALUES('{}')".format(e_ssn)
+    print(query2)
     try:
         appdb_connection = DBConnection('default')
         appdb_connection.execute_query(query)
-
+        if role != "others":
+            appdb_connection.execute_query(query2)
 
         # Storing the details in Django user object for authentication purpose
         user = User.objects.create_user(username=username, password = password, first_name = e_name)
