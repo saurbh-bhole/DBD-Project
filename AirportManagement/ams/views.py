@@ -1,4 +1,5 @@
 from django.shortcuts import redirect, render
+from numpy import require
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 #from .db_extraction import DBConnection
@@ -7,6 +8,10 @@ import pandas as pd
 from . import urls
 from django.contrib import messages
 from django.urls import reverse
+from django.contrib.auth.models import User, auth
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password
+
 
 
 class DBConnection:
@@ -44,7 +49,35 @@ class DBConnection:
         return count
 
 
+def login(request):
+    # This function is called when 'login' is mentioned in url.
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
 
+        user = auth.authenticate(username = username, password = password)
+        if user is not None:
+            auth.login(request, user)
+            return redirect('home')
+        else:
+            messages.info(request, 'Invalid credentials')
+            return redirect('login')
+    else:
+        return render(request, 'login.html')
+
+
+def logout(request):
+    # This function is called when 'logout' is mentioned in url.
+    auth.logout(request)
+    return redirect('login')
+    
+@api_view(['GET'])
+@login_required(login_url='/login/')
+def home(request):
+    # This function is called when '' is mentioned in url.
+    return render(request, 'home.html')
+
+@login_required(login_url='/login/')
 @api_view(['GET'])
 def user_directory(request):
     # This function is called when 'users' is mentioned in url.
@@ -62,7 +95,7 @@ def get_user_details(request):
     - renders DataTable
     """
     
-    header = ["e_name", "e_phonenumber", "e_city", "e_state", "e_country"]
+    header = ["e_name", "e_phonenumber", "e_city", "e_state", "e_country", "u_name"]
 
     # Extracting params from url
     try:
@@ -88,25 +121,25 @@ def get_user_details(request):
     search = search.lower().replace("'","''")
 
     if sort_col is None:
-        query = """SELECT e_name, e_phonenumber, e_city, e_state, e_country from personal_details_view
+        query = """SELECT e_name, e_phonenumber, e_city, e_state, e_country, u_name from personal_details_union_view
         where LOWER(e_name) like '%{}%'
         or LOWER(e_phonenumber) like '%{}%' or LOWER(e_city) like '%{}%'
-        or LOWER(e_state) like '%{}%' or LOWER(e_country) like '%{}%'
-        limit {} offset {}""".format(search, search, search, search, search, length, start)
+        or LOWER(e_state) like '%{}%' or LOWER(e_country) like '%{}%' or LOWER(u_name) like '%{}%' 
+        limit {} offset {}""".format(search, search, search, search, search, search, length, start)
     else:
         sort_col = str(int(sort_col) + 1)
-        query = """SELECT e_name, e_phonenumber, e_city, e_state, e_country from personal_details_view
+        query = """SELECT e_name, e_phonenumber, e_city, e_state, e_country, u_name from personal_details_union_view
         where LOWER(e_name) like '%{}%'
-        or LOWER(e_phonenumber) like '%{}%' or LOWER(e_city) like '%{}%'
+        or LOWER(e_phonenumber) like '%{}%' or LOWER(e_city) like '%{}%' or LOWER(u_name) like '%{}%' 
         or LOWER(e_state) like '%{}%' or LOWER(e_country) like '%{}%' order by {} {} 
-        limit {} offset {}""".format(search, search, search, search, search, sort_col, sort_dir, length, start)
+        limit {} offset {}""".format(search, search, search, search, search, search, sort_col, sort_dir, length, start)
 
-    count_query = "SELECT COUNT(*) FROM personal_details_view"
-    filtered_count_query = """SELECT count(*) from personal_details_view
-                            where LOWER(e_name) like '%{}%'
+    count_query = "SELECT COUNT(*) FROM personal_details_union_view"
+    filtered_count_query = """SELECT count(*) from personal_details_union_view
+                            where LOWER(e_name) like '%{}%' or LOWER(u_name) like '%{}%' 
                             or LOWER(e_phonenumber) like '%{}%' or LOWER(e_city) like '%{}%'
                             or LOWER(e_state) like '%{}%' or LOWER(e_country) like '%{}%'
-                            """.format(search, search, search, search, search)
+                            """.format(search, search, search, search, search, search)
     try:
         # Data extraction from DB
         appdb_connection = DBConnection('default')
@@ -139,6 +172,7 @@ def get_user_details(request):
 
 
 @api_view(['GET'])
+@login_required(login_url='/login/')
 def admin_employee_management(request):
     # This function is called when 'employeemanagement' is mentioned in url.
     return render(request, 'employee_management.html')
@@ -245,7 +279,6 @@ def insert_employee_details(request):
     - DB connection
     - DB record creation
     """
-    print(request.body)
 
     # Extracting params from url
     try:
@@ -272,8 +305,10 @@ def insert_employee_details(request):
         print("Error occurred while parameter extraction."
                 "Exception type:{}, Exception value:{} occurred while parameter "
                 "extraction.".format(type(e), e))
-        raise
-
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
     query = """INSERT INTO employee (`e_ssn`, `e_name`, `e_street`, `e_state`, `e_city`, `e_country`, 
                                     `e_pincode`, `e_phonenumber`, `e_salary`, `username`, `password`, 
                                     `u_id`, `union_membership_number`) 
@@ -283,8 +318,21 @@ def insert_employee_details(request):
                                     e_pincode, e_phonenumber, e_salary, username, password, e_uid, union_membership_number)
                                     
     print(query)
-    appdb_connection = DBConnection('default')
-    appdb_connection.execute_query(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+
+        # Storing the details in Django user object for authentication purpose
+        user = User.objects.create_user(username=username, password = password, first_name = e_name)
+        user.save()
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response    
 
     return Response({'data': 'success'})
 
@@ -317,26 +365,41 @@ def update_employee_details(request):
         #union_membership_number = request.POST['union_membership_number']
 
 
-        print("Extracted  {},{},{},{},{},{},{},{},{},{} using GET "
+        print("Extracted  {},{},{},{},{},{},{},{},{} using GET "
                      "request".format( e_ssn, e_name, e_street, e_city, e_state, e_country, e_pincode, e_phonenumber,
-                     e_salary, username))
+                     e_salary))
     except Exception as e:
         print("Error occurred while parameter extraction."
                 "Exception type:{}, Exception value:{} occurred while parameter "
                 "extraction.".format(type(e), e))
-        raise
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
 
     query = """UPDATE employee 
                 SET `e_ssn` = '{}', `e_name` = '{}', `e_street` = '{}', `e_state` = '{}',
                 `e_city` = '{}', `e_country` = '{}', `e_pincode` = '{}', `e_phonenumber` = '{}',
-                `e_salary` = '{}', `username` = '{}'
+                `e_salary` = '{}'
                 where  `e_ssn` = '{}'""".format(e_ssn, e_name, e_street, e_state, e_city, e_country,
-                e_pincode, e_phonenumber, e_salary, username, e_ssn)
+                e_pincode, e_phonenumber, e_salary, e_ssn)
                                     
     print(query)
-    appdb_connection = DBConnection('default')
-    appdb_connection.execute_query(query)
-    
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+        #Update first name in the user model as it is the only details that we are storing
+        User.objects.filter(username=username).update(first_name = e_name)
+        
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
     return Response({'data': 'success'})
 
 
@@ -356,19 +419,125 @@ def delete_employee_details(request):
     try:
         
         e_ssn = request.POST['d_e_ssn']
-        print("Extracted  {} using POST "
-                     "request".format( e_ssn))
+        username = request.POST['d_username']
+        print("Extracted  {}, {} using POST "
+                     "request".format( e_ssn,username))
     except Exception as e:
         print("Error occurred while parameter extraction."
                 "Exception type:{}, Exception value:{} occurred while parameter "
                 "extraction.".format(type(e), e))
-        raise
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
 
     query = """DELETE from employee where `e_ssn` = '{}'
                 """.format(e_ssn)
                                     
     print(query)
-    appdb_connection = DBConnection('default')
-    appdb_connection.execute_query(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
 
-    return redirect('/employeemanagement')
+        #deleting the record from User model
+        User.objects.filter(username=username).delete()
+
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+    
+    return Response({'data': 'success'})
+
+
+@api_view(['GET'])
+@login_required(login_url='/login/')
+def profile(request):
+    # This function is called when 'profile' is mentioned in url.
+    
+    query = """SELECT e_ssn, e_name, e_phonenumber, username, password, e_street, e_city, e_state, e_country, e_pincode from employee
+            where username = "{}" """.format(request.user.username)
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        context = app_df.to_dict('records')[0]
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while extractng "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 
+        return response
+    finally:
+        appdb_connection.close()
+        print(context)
+    return render(request, 'profile.html', context)
+
+
+@api_view(['POST'])
+def updateprofiledetails(request):
+    """
+    This function is called when 'updateprofiledetails' is mentioned in url.
+    This request is made from ajax call from Profile page,
+    to update personal details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+    print("reached")
+
+    # Extracting params from url
+    try:
+        
+        e_ssn = request.POST['u_e_ssn']
+        e_name = request.POST['u_e_name']
+        e_street = request.POST['u_e_street']
+        e_city = request.POST['u_e_city']
+        e_state = request.POST['u_e_state']
+        e_country = request.POST['u_e_country']
+        e_pincode = request.POST['u_e_pincode']
+        e_phonenumber = request.POST['u_e_phonenumber']
+        username = request.POST['u_username']
+        password = request.POST['u_password']
+
+        print("Extracted  {},{},{},{},{},{},{},{} using GET "
+                     "request".format( e_ssn, e_name, e_street, e_city, e_state, e_country, e_pincode, e_phonenumber))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE employee 
+                SET  `e_name` = '{}', `e_street` = '{}', `e_state` = '{}',
+                `e_city` = '{}', `e_country` = '{}', `e_pincode` = '{}', `e_phonenumber` = '{}',
+                `password` = '{}'                
+                where  `e_ssn` = '{}'""".format(e_name, e_street, e_state, e_city, e_country,
+                e_pincode, e_phonenumber, password, e_ssn)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+        #Update first name and password in the user model as it is the only details that we are storing
+        password=make_password(password,hasher='default')
+        User.objects.filter(username=username).update(first_name = e_name, password = password)
+        
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})
