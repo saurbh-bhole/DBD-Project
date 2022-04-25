@@ -1,0 +1,36 @@
+from django.db import connections
+import pandas as pd
+
+class DBConnection:
+    """
+    Class for database connection
+    read_table - returns a dataFrame from query
+    execute_query - executes a data manipulation query
+    close - used to close the connection created
+    execute_count - executes the query for selection and returns count of records
+    """
+    def __init__(self, connection_name):
+        self.conn = connections[connection_name]
+
+    def read_table(self, query):
+        """executes the query and returns df"""
+        return pd.read_sql(query, self.conn)
+
+    def execute_query(self,query):
+        """executes the query for insertion or stored procedure execution"""
+        cur = self.conn.cursor()
+        cur.execute(query)
+        cur.close()
+        self.conn.commit()
+
+    def close(self):
+        """closes the connection created"""
+        self.conn.close()
+
+    def execute_count(self, query):
+        """executes the query for selection and returns count of records"""
+        cursor = self.conn.cursor()
+        data = cursor.execute(query)
+        count = cursor.fetchone()[0]
+        cursor.close()
+        return count

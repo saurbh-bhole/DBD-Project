@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<h2>User Details</h2>
+	
+	<hr>
+	<table id="users-table" class="cell-border stripe">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Phone #</th>
+				<th>City</th>
+				<th>State</th>
+				<th>Country</th>
+				<th>Union</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+
+	<script language="javascript">
+		$(document).ready(function() {
+			$('#users-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getuserdetails/"
+				//"pageLength": 2
+			} );
+		} );
+	</script>
+    
+{% endblock %}

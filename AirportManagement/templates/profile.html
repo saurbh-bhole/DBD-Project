@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Profile</h2>		
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+        <form id = 'profile_edit_form'>		  
+            {% csrf_token %}
+            <div class="form-group hide">		  
+                <label>SSN:</label>
+                <input type="text" class="form-control" name="u_e_ssn" id="u_e_ssn" required="1" value = "{{e_ssn}}"}>		  
+            </div>
+            <div class="form-group">		  
+                <label>Name:</label>
+                <input type="text" class="form-control" name="u_e_name" id="u_e_name"  value = "{{e_name}}" required="1">		  
+            </div>
+            <div class="form-group">		  
+                <label>Street:</label>
+                <input type="text" class="form-control" name="u_e_street" id="u_e_street" value = "{{e_street}}" required="1">		  
+            </div>
+            <div class="form-group">		  
+                <label>City:</label>
+                <input type="text" class="form-control" name="u_e_city" id="u_e_city" value = "{{e_city}}"  required="1">		  
+            </div>
+            <div class="form-group">		  
+                <label>State:</label>
+                <input type="text" class="form-control" name="u_e_state" id="u_e_state"  value = "{{e_state}}" required="1">		  
+            </div>
+            <div class="form-group">		  
+                <label>Country:</label>
+                <input type="text" class="form-control" name="u_e_country" id="u_e_country" value = "{{e_country}}" required="1">		  
+            </div>
+            <div class="form-group">		  
+                <label>Pincode:</label>
+                <input type="number" class="form-control" name="u_e_pincode" id="u_e_pincode" value = "{{e_pincode}}" required="1">
+            </div>
+            <div class="form-group">		  
+                <label>Phone:</label>
+                <input type="number" class="form-control" name="u_e_phonenumber" id="u_e_phonenumber"  value = "{{e_phonenumber}}" required="1">
+            </div>
+            <div class="form-group hide">		  
+                <label>Username:</label>
+                <input type="text" class="form-control" name="u_username" id="u_username" required="1" value = "{{username}}">		  
+            </div>
+            <div class="form-group">		  
+                <label>Password:</label>
+                <input type="password" class="form-control" name="u_password" id="u_password" value = "{{password}}" required="1">		  
+            </div>
+            
+            
+            <div class="form-group">
+                <button class="btn btn-primary mt-1" type="submit">Update details</button>
+            </div>
+        </form>
+
+	</div>
+
+	
+	<script language="javascript">
+
+		$(document).ready(function() {
+
+			// edit user ajax call
+			$(document).on('submit', '#profile_edit_form', function(e){
+                console.log("reached")
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updateprofiledetails/',
+					data: {
+                        u_e_ssn : $('#u_e_ssn').val(),
+						u_e_name : $('#u_e_name').val(),
+						u_e_street : $('#u_e_street').val(),
+						u_e_city : $('#u_e_city').val(),
+						u_e_state : $('#u_e_state').val(),
+						u_e_country : $('#u_e_country').val(),
+						u_e_pincode : $('#u_e_pincode').val(),
+						u_e_phonenumber : $('#u_e_phonenumber').val(),
+						u_username : $('#u_username').val(),
+                        u_password : $('#u_password').val(),
+                        csrfmiddlewaretoken: "{{csrf_token}}"
+                    },
+					success: function (result) {
+						$('#alert_message').show();
+						$('#text_message').text("Details updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});			
+		});		
+	</script>
+
+{% endblock %}

@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Employee Management</h2>
+		<br>
+		<div class="align-right">
+			<button  class="btn btn-success  btn-sm" data-toggle="modal" data-target = "#new_emp_modal"> + New Employee</button>
+		</div>
+
+		
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>SSN</th>
+					<th>Name</th>
+					<th>Phone #</th>
+					<th>Username</th>
+					<th>Street</th>
+					<th>City</th>
+					<th>State</th>
+					<th>Country</th>
+					<th>Pincode</th>
+					<th>Salary</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+	<!-- Add employee modal -->
+	<div id="new_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Add Employee</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'insert_emp_form'>
+						{% csrf_token %}
+						<div class="form-group">		  
+						<label>SSN:</label>
+						<input type="text" class="form-control" id="e_ssn" name="e_ssn" minlength="11" maxlength="11" placeholder="XXX-XX-XXXX" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Name:</label>
+							<input type="text" class="form-control" name="e_name"  id="e_name" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Street:</label>
+							<input type="text" class="form-control" name="e_street" id="e_street" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>City:</label>
+							<input type="text" class="form-control" name="e_city" id="e_city" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>State:</label>
+							<input type="text" class="form-control" name="e_state" id="e_state" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Country:</label>
+							<input type="text" class="form-control" name="e_country" id="e_country" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Pincode:</label>
+							<input type="number" class="form-control" name="e_pincode" id="e_pincode" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Phone:</label>
+							<input type="number" class="form-control" name="e_phonenumber" id="e_phonenumber" required="1">
+						</div>
+						<div class = "form-group">
+							<label for="role">Role:</label>
+								<select id="role" name="role" class="form-control">
+									<option value="technician">Technician</option>
+									<option value="traffic">Traffic controller</option>
+									<option value="faa">FAA admin</option>
+									<option value="others">Others</option>
+								</select>
+						</div>
+						<div class="form-group">		  
+							<label>Salary:</label>
+							<input type="number" class="form-control" name="e_salary" id="e_salary" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Username:</label>
+							<input type="text" class="form-control" name="username" id="username" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Password:</label>
+							<input type="password" class="form-control" name="password" id="password" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Union id:</label>
+							<input type="number" class="form-control" name="u_id" id="u_id" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Union Membership #:</label>
+							<input type="number" class="form-control" name="union_membership_number" id="union_membership_number" required="1">
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary  mt-1" type="submit">Add Employee</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+	<!-- Delete employee modal -->
+	<div id="delete_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Delete Employee details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = "delete_emp_form">		  
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>SSN:</label>
+							<input type="text" class="form-control" name="d_e_ssn" id="d_e_ssn" required="1">		  
+						</div>
+						<div class="form-group hide">		  
+							<label>Username:</label>
+							<input type="text" class="form-control" name="d_username" id="d_username" required="1">		  
+						</div>
+						
+						<div class="form-group">
+							<button class="btn btn-danger mt-1" type="submit">Delete Employee details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Employee details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label class = 'hide'>SSN:</label>
+							<input type="text" class="form-control hide" name="u_e_ssn" id="u_e_ssn" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Name:</label>
+							<input type="text" class="form-control" name="u_e_name" id="u_e_name" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Street:</label>
+							<input type="text" class="form-control" name="u_e_street" id="u_e_street" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>City:</label>
+							<input type="text" class="form-control" name="u_e_city" id="u_e_city" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>State:</label>
+							<input type="text" class="form-control" name="u_e_state" id="u_e_state" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Country:</label>
+							<input type="text" class="form-control" name="u_e_country" id="u_e_country" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Pincode:</label>
+							<input type="number" class="form-control" name="u_e_pincode" id="u_e_pincode" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Phone:</label>
+							<input type="number" class="form-control" name="u_e_phonenumber" id="u_e_phonenumber" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Salary:</label>
+							<input type="number" class="form-control" name="u_e_salary" id="u_e_salary" required="1">
+						</div>
+						<div class="form-group hide">		  
+							<label>Username:</label>
+							<input type="text" class="form-control" name="u_username" id="u_username" required="1">		  
+						</div>
+						
+						<!--
+						<div class="form-group">		  
+							<label>Union id:</label>
+							<input type="number" class="form-control" name="u_id" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Union Membership #:</label>
+							<input type="number" class="form-control" name="union_membership_number" required="1">
+						</div>
+						-->
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update Employee details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getemployeedetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>/<button class='btn btn-danger  btn-sm' data-toggle='modal' data-target = '#delete_emp_modal'>Delete</a>",
+					"orderable": false,
+					"width": "81px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				console.log(data);
+				console.log($(this)[0].className);
+				if (($(this)[0].className)=='btn btn-danger  btn-sm'){
+					$('#d_e_ssn').val(data[0]);
+					$('#d_username').val(data[3]);		
+				}
+				else{
+					$('#u_e_ssn').val(data[0]);
+					$('#u_e_name').val(data[1]);
+					$('#u_e_street').val(data[4]);
+					$('#u_e_city').val(data[5]);
+					$('#u_e_state').val(data[6]);
+					$('#u_e_country').val(data[7]);
+					$('#u_e_pincode').val(data[8]);
+					$('#u_e_phonenumber').val(data[2]);
+					$('#u_e_salary').val(data[9]);
+					$('#u_username').val(data[3]);					
+				}
+			});
+			
+			// add employee ajax call
+			$(document).on('submit', '#insert_emp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/insertemployeedetails/',
+					data: {
+						e_ssn : $('#e_ssn').val(),
+						e_name : $('#e_name').val(),
+						e_street : $('#e_street').val(),
+						e_city : $('#e_city').val(),
+						e_state : $('#e_state').val(),
+						e_country : $('#e_country').val(),
+						e_pincode : $('#e_pincode').val(),
+						e_phonenumber : $('#e_phonenumber').val(),
+						role : $('#role').val(),
+						e_salary : $('#e_salary').val(),
+						username : $('#username').val(),
+						password : $('#password').val(),
+						u_id : $('#u_id').val(),
+						union_membership_number : $('#union_membership_number').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#new_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Employee added successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updateemployeedetails/',
+					data: {
+						u_e_ssn : $('#u_e_ssn').val(),
+						u_e_name : $('#u_e_name').val(),
+						u_e_street : $('#u_e_street').val(),
+						u_e_city : $('#u_e_city').val(),
+						u_e_state : $('#u_e_state').val(),
+						u_e_country : $('#u_e_country').val(),
+						u_e_pincode : $('#u_e_pincode').val(),
+						u_e_phonenumber : $('#u_e_phonenumber').val(),
+						u_e_salary : $('#u_e_salary').val(),
+						u_username : $('#u_username').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+						
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Employee updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// delete employee 
+			$(document).on('submit', '#delete_emp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/deleteemployeedetails/',
+					data: {
+						d_e_ssn : $('#d_e_ssn').val(),
+						d_username : $('#d_username').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#delete_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Employee deleted successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+			
+		} );
+
+		
+	</script>
+
+{% endblock %}
