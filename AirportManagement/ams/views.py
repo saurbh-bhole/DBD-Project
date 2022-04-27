@@ -75,7 +75,22 @@ def logout(request):
 @login_required(login_url='/login/')
 def home(request):
     # This function is called when '' is mentioned in url.
-    return render(request, 'home.html')
+    appdb_connection = DBConnection('default')
+    count_query_unairworthy = "select count(*) from airplane where airworthy = 0"
+    count_query_airworthy = "select count(*) from airplane where airworthy > 0"
+    airworthy_count = appdb_connection.execute_count(count_query_airworthy)
+    unairworthy_count = appdb_connection.execute_count(count_query_unairworthy)
+    data = []
+    label = []
+    data.append(airworthy_count)
+    label.append("Airworthy")
+    data.append(unairworthy_count)
+    label.append("Not Airworthy")
+
+    return render(request, 'home.html', {
+        'labels': label,
+        'data': data,
+    })
 
 @login_required(login_url='/login/')
 @api_view(['GET'])
