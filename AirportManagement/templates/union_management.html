@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Union Management</h2>
+		<br>
+		<div class="align-right">
+			<button  class="btn btn-success  btn-sm" data-toggle="modal" data-target = "#new_emp_modal"> + New Union</button>
+		</div>
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>Union #</th>
+					<th>Name</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+	<!-- Add union modal -->
+	<div id="new_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Add Union</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'insert_emp_form'>
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Union Name:</label>
+							<input type="text" class="form-control" name="union_name" id="union_name" required="1">
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary  mt-1" type="submit">Add Union</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+	<!-- Delete employee modal -->
+	<div id="delete_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Delete union details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = "delete_emp_form">		  
+						{% csrf_token %}
+						<div class="form-group hide">		  
+							<label>UID:</label>
+							<input type="text" class="form-control" name="d_uid" id="d_uid" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Union Name:</label>
+							<input type="text" class="form-control" name="d_uname" id="d_uname" required="1">		  
+						</div>
+						
+						<div class="form-group">
+							<button class="btn btn-danger mt-1" type="submit">Delete union details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Union details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+						
+						<div class="form-group hide">		  
+							<label>Union id:</label>
+							<input type="number" class="form-control" name="u_uid" id = "u_uid" required="1">
+						</div>
+						<div class="form-group">		  
+							<label>Union Name:</label>
+							<input type="text" class="form-control" name="u_uname" id = "u_uname" required="1">
+						</div>
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update union details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getuniondetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>/<button class='btn btn-danger  btn-sm' data-toggle='modal' data-target = '#delete_emp_modal'>Delete</a>",
+					"orderable": false,
+					"width": "81px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				//console.log(data);
+				//console.log($(this)[0].className);
+				if (($(this)[0].className)=='btn btn-danger  btn-sm'){
+					$('#d_uid').val(data[0]);
+					$('#d_uname').val(data[1]);		
+				}
+				else{
+                    $('#u_uid').val(data[0]);
+					$('#u_uname').val(data[1]);
+				}
+			});
+			
+			// add employee ajax call
+			$(document).on('submit', '#insert_emp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/insertuniondetails/',
+					data: {
+						union_name : $('#union_name').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#new_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Union added successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updateuniondetails/',
+					data: {
+						u_uid : $('#u_uid').val(),
+						u_uname : $('#u_uname').val(),	
+                        csrfmiddlewaretoken: "{{csrf_token}}"					
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Union updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// delete employee 
+			$(document).on('submit', '#delete_emp_form', function(e){
+				console.log($('#d_uid').val());
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/deleteuniondetails/',
+					data: {
+						d_uid : $('#d_uid').val(),						
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#delete_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Union deleted successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+			
+		} );
+
+	</script>
+
+{% endblock %}

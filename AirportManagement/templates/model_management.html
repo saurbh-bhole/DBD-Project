@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Model Management</h2>
+		<br>
+		<div class="align-right">
+			<button  class="btn btn-success  btn-sm" data-toggle="modal" data-target = "#new_emp_modal"> + New Model</button>
+		</div>
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>Model #</th>
+					<th>Capacity</th>
+					<th>Weight</th>
+                    <th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+	<!-- Add model modal -->
+	<div id="new_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Add model</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'insert_emp_form'>
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Model number:</label>
+							<input type="text" class="form-control" name="model_number" id="model_number" required="1">
+						</div>
+
+                        <div class="form-group">		  
+							<label>Model Capacity:</label>
+							<input type="number" class="form-control" name="m_capacity" id="m_capacity" required="1">
+						</div>
+
+                        <div class="form-group">		  
+							<label>Model weight:</label>
+							<input type="text" class="form-control" name="m_weight" id="m_weight" required="1">
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary  mt-1" type="submit">Add model</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+	<!-- Delete employee modal -->
+	<div id="delete_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Delete model details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = "delete_emp_form">		  
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Model number:</label>
+							<input type="text" class="form-control" name="d_model_number" id="d_model_number" required="1">
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-danger mt-1" type="submit">Delete model details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update model details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+						
+						<div class="form-group hide">		  
+							<label>Model number:</label>
+							<input type="text" class="form-control" name="u_model_number" id="u_model_number" required="1">
+						</div>
+
+                        <div class="form-group">		  
+							<label>Model Capacity:</label>
+							<input type="number" class="form-control" name="u_m_capacity" id="u_m_capacity" required="1">
+						</div>
+
+                        <div class="form-group">		  
+							<label>Model weight:</label>
+							<input type="text" class="form-control" name="u_m_weight" id="u_m_weight" required="1">
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update model details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+    <!-- Add expert modal -->
+	<div id="add_exp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Add Experts</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'insert_exp_form'>
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Model number:</label>
+							<input type="text" class="form-control" name="e_model_number" id="e_model_number" required="1">
+						</div>
+						<div class = "form-group" id = "employee_field">
+							<label for="e_ssn">Employee:</label>
+							<br>
+							<select id="e_ssn" style='width: 100%;' required></select>
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary  mt-1" type="submit">Add expert</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getmodeldetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>/<button class='btn btn-danger  btn-sm' data-toggle='modal' data-target = '#delete_emp_modal'>Delete</button>/<button class='btn btn-secondary  btn-sm' data-toggle='modal' data-target = '#add_exp_modal'>Add experts</button>",
+					"orderable": false,
+					"width": "200px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				//console.log(data);
+				//console.log($(this)[0].className);
+				if (($(this)[0].className)=='btn btn-danger  btn-sm'){
+					$('#d_model_number').val(data[0]);
+				}else if(($(this)[0].className)=='btn btn-secondary  btn-sm'){
+                    $('#e_model_number').val(data[0]);
+                }
+				else{
+                    $('#u_model_number').val(data[0]);
+					$('#u_m_capacity').val(data[1]);		
+                    $('#u_m_weight').val(data[2]);		
+				}
+			});
+			
+			// add employee ajax call
+			$(document).on('submit', '#insert_emp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/insertmodeldetails/',
+					data: {
+						model_number : $('#model_number').val(),
+                        m_capacity : $('#m_capacity').val(),
+                        m_weight : $('#m_weight').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#new_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Model added successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updatemodeldetails/',
+					data: {
+						model_number : $('#u_model_number').val(),
+                        m_capacity : $('#u_m_capacity').val(),
+                        m_weight : $('#u_m_weight').val(),
+                        csrfmiddlewaretoken: "{{csrf_token}}"					
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Model updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// delete employee 
+			$(document).on('submit', '#delete_emp_form', function(e){
+				console.log($('#d_uid').val());
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/deletemodeldetails/',
+					data: {
+						model_number : $('#d_model_number').val(),
+                        m_capacity : $('#d_m_capacity').val(),
+                        m_weight : $('#d_m_weight').val(),						
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#delete_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Model deleted successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// dynamic dropdown for union
+			$('#e_ssn').select2({
+				ajax: {
+					url: '/dropdown/?param=employee',
+					dataType: 'json',
+					processResults: function (data) {
+						return {
+							results: $.map(data.results, function (item) {
+								//console.log(item.id, item.text);
+								return {
+									text: item.text,
+									id: item.id
+								}
+							})
+						};
+					}
+					
+				},
+				dropdownParent: $('#add_exp_modal .modal-content')			
+			});
+			
+		} );
+
+        // add expert ajax call
+			$(document).on('submit', '#insert_exp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/insertexpertdetails/',
+					data: {
+						model_number : $('#e_model_number').val(),
+                        e_ssn : $('#e_ssn').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#add_exp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Expert added successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+
+			});
+	</script>
+
+{% endblock %}
