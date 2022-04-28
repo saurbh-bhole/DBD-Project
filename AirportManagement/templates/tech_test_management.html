@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Test Details</h2>
+		<br>
+		
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>Test #</th>
+                    <th>Name</th>
+					<th>Date</th>
+					<th>Hours</th>
+					<th>Max Score</th>
+					<th>Score</th>
+                    <th>Registration #</th>
+                    <th>FAA Admin</th>
+					<th>Technician</th>					
+                    <th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Score</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+                        <div class="form-group hide">		  
+							<label>number:</label>
+							<input type="number" class="form-control" name="t_number"  id="t_number" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Score:</label>
+							<input type="number" class="form-control" name="score" id="score" required="1">		  
+						</div>
+                        <div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update score</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/gettestdetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>",
+					"orderable": false,
+					"width": "40px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				
+				console.log(data);
+				console.log($(this)[0].className);
+				
+				$('#t_number').val(data[0]);
+				$('#score').val(data[5]);
+				
+			});
+
+			
+
+			// edit test ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updatescore/',
+					data: {
+                        t_number : $('#t_number').val(),
+						score : $('#score').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+						
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Score updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+		});
+
+		
+	</script>
+
+{% endblock %}

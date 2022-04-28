@@ -61,13 +61,14 @@
                   {% endif %}
 
                   {% if request.session.role == "technician" %}
-                  <a class="dropdown-item" href="#">Link 3</a>
+                  <a class="dropdown-item" href="/tech_test_details">Test Details</a>
                   {% endif %}
                   {% if request.session.role == "traffic_controller" %}
                   <a class="dropdown-item" href="/stationmanagement">Update Station</a>
                   {% endif %}
                   {% if request.session.role == "faa_admin" %}
                   <a class="dropdown-item" href="/airworthymanagement">Update Airworthy status</a>
+                  <a class="dropdown-item" href="/faa_test_details">Test Details</a>
                   {% endif %}
 
                 </div>

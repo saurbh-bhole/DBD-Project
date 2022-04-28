@@ -1328,6 +1328,7 @@ def dropdown(request):
     try:
         
         param = request.GET['param']
+        reg = request.GET.get('reg')
         print("Extracted  {} using GET request".format(param))
 
     except Exception as e:
@@ -1345,8 +1346,16 @@ def dropdown(request):
     elif param == 'employee':
         # technicians
         query = """select distinct e.e_ssn, e_name from employee e join technicians t on t.e_ssn = e.e_ssn"""
+    elif param == 'registration':
+        query = """select distinct registration_number from airplane"""
+    elif param == 'tech':
         
-
+        if reg is not None and reg!='null' and reg!='':
+            
+            query =  """select e_ssn, e_name from employee where e_ssn in (select e_ssn from expertises where model_number in (select model_number from airplane where registration_number = {}))""".format(reg)
+        else:
+            query =  """select e_ssn, e_name from employee where e_ssn in (select e_ssn from expertises where model_number in (select model_number from airplane))"""
+    print(query)
     # Object creation of DBConnection class
     appdb_connection = DBConnection('default')
     try:
@@ -1372,6 +1381,14 @@ def dropdown(request):
                                         'text': row["u_name"]})
     
     elif param == 'employee':
+        for index, row in values.iterrows():
+            drop_down_item .append({'id': row['e_ssn'],
+                                        'text': row["e_name"]})
+    elif param == 'registration':
+        for index, row in values.iterrows():
+            drop_down_item .append({'id': row['registration_number'],
+                                        'text': row["registration_number"]})
+    elif param == 'tech':
         for index, row in values.iterrows():
             drop_down_item .append({'id': row['e_ssn'],
                                         'text': row["e_name"]})
@@ -1669,3 +1686,318 @@ def update_airworthy_details(request):
         
     return Response({'data': 'success'})
 
+
+# test management
+# employee management
+@api_view(['GET'])
+@login_required(login_url='/login/')
+def test_management(request):
+    # This function is called when 'testmanagement' is mentioned in url.
+    return render(request, 'test_management.html')
+
+@api_view(['GET'])
+def get_test_details(request):
+    """
+    This function is called when 'getemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under User directory,
+    to render the dataTable and provide additional functionality like sorting, pagination
+    This function handles
+    - parameter extraction
+    - DB connection
+    - renders DataTable
+    """
+    header = ["t_number", "t_name", "date", "number_of_hours", "maximum_possible_score", "score", "registration_number", "faa_name", "tech_name"]
+
+    # Extracting params from url
+    try:
+        
+        start = request.GET['start']
+        length = request.GET['length']
+        search = request.GET['search[value]']
+        # Below parameters are available based on sorting activity(optional)
+        sort_col = request.GET.get('order[0][column]')
+        sort_dir = request.GET.get('order[0][dir]')
+        pass
+
+        print("Extracted start,length,search,"
+                     "sort_col,sort_dir {},{},{},{},{} using GET "
+                     "request".format( start, length, search, sort_col, sort_dir))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        raise
+
+    # Extracting data from app DB
+    search = search.lower().replace("'","''")
+
+    if sort_col is None:
+        query = """
+        SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+        from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+        left join employee e_tech on e_tech.e_ssn = t.tech_id
+        WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+        LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+        or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+        or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+        limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search, length, start)
+        
+        
+    else:
+        sort_col = str(int(sort_col) + 1)
+        query = """
+        SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+        from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+        left join employee e_tech on e_tech.e_ssn = t.tech_id
+        WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+        LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+        or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+        or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')order by {} {}
+        
+        limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search, sort_col, sort_dir, length, start)
+    print(query)
+    count_query = """SELECT COUNT(*) FROM test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+                    left join employee e_tech on e_tech.e_ssn = t.tech_id
+                    WHERE (e_faa.username = '{}' or e_tech.username = '{}')"""
+    filtered_count_query = """SELECT count(*) from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+                            left join employee e_tech on e_tech.e_ssn = t.tech_id
+                            WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+                            LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+                            or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+                            or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+                            """.format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search)
+    #print(filtered_count_query)
+    #print(count_query)
+    #print(query)
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        app_df = app_df.fillna('')
+        total_count = appdb_connection.execute_count(count_query)
+        filtered_count = appdb_connection.execute_count(filtered_count_query)
+
+        # converting column name to lower case
+        app_df.columns = [column.lower() for column in app_df.columns]
+        datatable_json = []
+
+        # Preparing dataTable records
+        for i in range(app_df.shape[0]):
+            temp_list = []
+            for column_name in header:
+                temp_list.append((app_df[column_name][i]))
+
+            datatable_json.append(temp_list)
+
+    except Exception as e:
+        print("Error occurred while extracting data from application DB."
+                      "Exception type:{}, Exception value:{} occurred while extracting data from application DB.".format(
+            type(e), e))
+        raise
+    finally:
+        appdb_connection.close()
+
+    return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
+
+
+@api_view(['POST'])
+def insert_test_details(request):
+    """
+    This function is called when 'insertemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Add button,
+    to add employee details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record creation
+    """
+
+    # Extracting params from url
+    try:        
+        t_name = request.POST['t_name']
+        number_of_hours = request.POST['number_of_hours']
+        maximum_possible_score = request.POST['maximum_possible_score']
+        registration_number = request.POST['registration_number']
+        tech_id = request.POST['tech_id']
+        
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+    
+    try:
+        appdb_connection = DBConnection('default')
+        faa_id = appdb_connection.execute_count("select e_ssn from employee where username = '{}'".format(request.user.username))
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response 
+    query = """INSERT INTO test (`t_name`, `date`, `number_of_hours`, `maximum_possible_score`, 
+                                    `registration_number`, `tech_id`, `faa_id`) 
+                                    VALUES ('{}', CURDATE(), '{}', '{}', '{}', '{}', '{}')
+                                    """.format(t_name , number_of_hours, maximum_possible_score, 
+                                    registration_number , tech_id, faa_id)
+    
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response    
+
+    return Response({'data': 'success'})
+
+@api_view(['POST'])
+def update_test_details(request):
+    """
+    This function is called when 'updateemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button,
+    to update employee details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+
+    # Extracting params from url
+    try:
+        
+        t_number = request.POST['t_number']
+        t_name = request.POST['t_name']
+        number_of_hours = request.POST['number_of_hours']
+        maximum_possible_score = request.POST['maximum_possible_score']
+        registration_number = request.POST['registration_number']
+        tech_id = request.POST['tech_id']
+
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE test 
+                SET `t_name` = '{}', `number_of_hours` = '{}', `maximum_possible_score` = '{}',
+                `registration_number` = '{}', `tech_id` = '{}'
+                where  `t_number` = '{}'""".format(t_name, number_of_hours, maximum_possible_score, registration_number, tech_id, t_number)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})
+
+@api_view(['POST'])
+def delete_test_details(request):
+    """
+    This function is called when 'deleteemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button,
+    to delete employee details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record deletion
+    """
+
+    # Extracting params from url
+    try:
+        t_number = request.POST['t_number']
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """DELETE from test where `t_number` = '{}'
+                """.format(t_number)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+    
+    return Response({'data': 'success'})
+
+
+# test management
+# employee management
+@api_view(['GET'])
+@login_required(login_url='/login/')
+def tech_test_management(request):
+    # This function is called when 'testmanagement' is mentioned in url.
+    return render(request, 'tech_test_management.html')
+
+@api_view(['POST'])
+def update_score(request):
+    """
+    This function is called when 'updateemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button,
+    to update employee details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+
+    # Extracting params from url
+    try:
+        
+        t_number = request.POST['t_number']
+        score = request.POST['score']
+
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE test 
+                SET `score` = '{}'
+                where  `t_number` = '{}'""".format(score, t_number)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})

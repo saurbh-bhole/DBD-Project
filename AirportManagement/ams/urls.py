@@ -50,8 +50,20 @@ urlpatterns = [
     path(r'updatestation/', views.update_station_details, name = 'updatestationdetails'),
 
     # faa admin
+    # airworthy
     path(r'airworthymanagement/', views.airworthy_management, name = 'airworthymanagement'),
     path(r'getairworthydetails/', views.get_airworthy_details, name = 'getairworthydetails'),
     path(r'updateairworthy/', views.update_airworthy_details, name = 'updateairworthydetails'),
+    # test
+    #test management
+    path(r'faa_test_details/', views.test_management, name = 'testmanagement'),
+    path(r'gettestdetails/', views.get_test_details, name = 'gettestdetails'),
+    path(r'inserttestdetails/', views.insert_test_details, name = 'inserttestdetails'),
+    path(r'updatetestdetails/', views.update_test_details, name = 'updatetestdetails'),
+    path(r'deletetestdetails/', views.delete_test_details, name = 'deletetestdetails'),
+
+    # technician
+    path(r'tech_test_details/', views.tech_test_management, name = 'tech_testmanagement'),
+    path(r'updatescore/', views.update_score, name = 'updatescore'),
 
 ]
