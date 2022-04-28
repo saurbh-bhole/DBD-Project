@@ -1732,43 +1732,86 @@ def get_test_details(request):
     search = search.lower().replace("'","''")
 
     if sort_col is None:
-        query = """
-        SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
-        from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
-        left join employee e_tech on e_tech.e_ssn = t.tech_id
-        WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
-        LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
-        or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-        or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
-        limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search, length, start)
+        if request.session["role"] ==  "technician":
+            query = """
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+            left join employee e_tech on e_tech.e_ssn = t.tech_id
+            left join airplane a on a.registration_number = t.registration_number
+            WHERE (e_faa.username = '{}' or e_tech.username = '{}' and stationed_at is not NULL) and (
+            LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+            or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+            limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search, length, start)
         
+        else:
+            query = """
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+            left join employee e_tech on e_tech.e_ssn = t.tech_id
+            WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+            LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+            or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+            or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+            limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search, length, start)
+            
         
     else:
         sort_col = str(int(sort_col) + 1)
-        query = """
-        SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
-        from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
-        left join employee e_tech on e_tech.e_ssn = t.tech_id
-        WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
-        LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
-        or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-        or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')order by {} {}
-        
-        limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search, sort_col, sort_dir, length, start)
+        if request.session["role"] ==  "technician":
+            query = """
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+            left join employee e_tech on e_tech.e_ssn = t.tech_id
+            left join airplane a on a.registration_number = t.registration_number
+            WHERE (e_faa.username = '{}' or e_tech.username = '{}'  and stationed_at is not NULL) and (
+            LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+            or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')order by {} {}
+            limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search, sort_col, sort_dir, length, start)
+
+        else:
+            query = """
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+            left join employee e_tech on e_tech.e_ssn = t.tech_id
+            WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+            LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+            or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+            or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')order by {} {}
+            
+            limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search, sort_col, sort_dir, length, start)
     print(query)
-    count_query = """SELECT COUNT(*) FROM test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
-                    left join employee e_tech on e_tech.e_ssn = t.tech_id
-                    WHERE (e_faa.username = '{}' or e_tech.username = '{}')"""
-    filtered_count_query = """SELECT count(*) from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+
+    if request.session["role"] ==  "technician":
+        count_query = """SELECT COUNT(*) FROM test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+                        left join employee e_tech on e_tech.e_ssn = t.tech_id
+                        left join airplane a on a.registration_number = t.registration_number
+                        WHERE (e_faa.username = '{}' or e_tech.username = '{}' and stationed_at is not NULL)""".format(request.user.username,request.user.username)
+    else:
+        count_query = """SELECT COUNT(*) FROM test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+                        left join employee e_tech on e_tech.e_ssn = t.tech_id
+                        WHERE (e_faa.username = '{}' or e_tech.username = '{}')""".format(request.user.username,request.user.username)
+
+    if request.session["role"] == "technician":
+        filtered_count_query = """SELECT count(*) from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
                             left join employee e_tech on e_tech.e_ssn = t.tech_id
-                            WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+                            left join airplane a on a.registration_number = t.registration_number
+                            WHERE (e_faa.username = '{}' or e_tech.username = '{}' and stationed_at is not NULL) and (
                             LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
                             or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-                            or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+                            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
                             """.format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search)
-    #print(filtered_count_query)
-    #print(count_query)
-    #print(query)
+    
+    else:        
+        filtered_count_query = """SELECT count(*) from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
+                                left join employee e_tech on e_tech.e_ssn = t.tech_id
+                                WHERE (e_faa.username = '{}' or e_tech.username = '{}') and (
+                                LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
+                                or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
+                                or LOWER(registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
+                                """.format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search)
+    
     try:
         # Data extraction from DB
         appdb_connection = DBConnection('default')
