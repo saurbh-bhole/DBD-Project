@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Airplane Details</h2>
+		<br>
+        <div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>Registation #</th>
+					<th>Stationed At</th>
+					<th>Update</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Airplane details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+						
+						<div class="form-group hide">		  
+							<label>Registration Number:</label>
+							<input type="number" class="form-control" name="u_registration_number" id = "u_registration_number" required="1">
+						</div>
+						<div class="form-group ">		  
+							<label>Stationed at:</label>
+							<input type="number" class="form-control" name="u_stationed_at" id = "u_stationed_at" min = "1" max = "40">
+						</div>
+                        
+						
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update airplane details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getstationdetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>",
+					"orderable": false,
+					"width": "22px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				//console.log(data);
+                //console.log($(this)[0].className);
+                $('#u_registration_number').val(data[0]);
+                $('#u_stationed_at').val(data[1]);
+
+			});
+			
+			
+
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updatestation/',
+					data: {
+						registration_number : $('#u_registration_number').val(),
+                        stationed_at : $('#u_stationed_at').val(),
+                        csrfmiddlewaretoken: "{{csrf_token}}"					
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Airplane details updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+		});
+
+		
+	</script>
+
+{% endblock %}

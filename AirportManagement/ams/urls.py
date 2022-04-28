@@ -44,4 +44,14 @@ urlpatterns = [
     # dynamic dropdown values
     path(r'dropdown/', views.dropdown, name = 'dropdown'),    
 
+    # traffic controllers
+    path(r'stationmanagement/', views.station_management, name = 'stationmanagement'),
+    path(r'getstationdetails/', views.get_station_details, name = 'getstationdetails'),
+    path(r'updatestation/', views.update_station_details, name = 'updatestationdetails'),
+
+    # faa admin
+    path(r'airworthymanagement/', views.airworthy_management, name = 'airworthymanagement'),
+    path(r'getairworthydetails/', views.get_airworthy_details, name = 'getairworthydetails'),
+    path(r'updateairworthy/', views.update_airworthy_details, name = 'updateairworthydetails'),
+
 ]

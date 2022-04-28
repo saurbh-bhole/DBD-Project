@@ -1384,3 +1384,288 @@ def dropdown(request):
         drop_down_item = list(filter(lambda drop_down_element: q in drop_down_element['text'], drop_down_item))
 
     return Response({'results': drop_down_item})
+
+
+
+# traffic controllers
+
+def station_management(request):
+    # This function is called when 'airplanemanagement' is mentioned in url.
+    return render(request, 'station_management.html')
+
+@api_view(['GET'])
+def get_station_details(request):
+    """
+    This request is made from ajax call from datatable,
+    to render the dataTable and provide additional functionality like sorting, pagination
+    This function handles
+    - parameter extraction
+    - DB connection
+    - renders DataTable
+    """
+    header = ["registration_number", "stationed_at"]
+
+    # Extracting params from url
+    try:
+        
+        start = request.GET['start']
+        length = request.GET['length']
+        search = request.GET['search[value]']
+        # Below parameters are available based on sorting activity(optional)
+        sort_col = request.GET.get('order[0][column]')
+        sort_dir = request.GET.get('order[0][dir]')
+        pass
+
+        print("Extracted start,length,search,"
+                     "sort_col,sort_dir {},{},{},{},{} using GET "
+                     "request".format( start, length, search, sort_col, sort_dir))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        raise
+
+    # Extracting data from app DB
+    search = search.lower().replace("'","''")
+
+    if sort_col is None:     
+
+        query = """SELECT registration_number, stationed_at from airplane
+        where LOWER(registration_number) like '%{}%' or LOWER(stationed_at) like '%{}%' 
+        limit {} offset {}""".format(search, search, length, start)
+    else:
+        sort_col = str(int(sort_col) + 1)
+        query = """SELECT registration_number, stationed_at from airplane
+        where LOWER(registration_number) like '%{}%' or LOWER(stationed_at) like '%{}%' order by {} {}
+        limit {} offset {}""".format( search, search, sort_col, sort_dir, length, start)
+
+    count_query = "SELECT COUNT(*) FROM airplane"
+    filtered_count_query = """SELECT count(*) from airplane
+                            where LOWER(registration_number) like '%{}%' or LOWER(stationed_at) like '%{}%' 
+                            """.format(search, search)
+    #print(filtered_count_query)
+    #print(count_query)
+    #print(query)
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        app_df = app_df.fillna('')
+
+        total_count = appdb_connection.execute_count(count_query)
+        filtered_count = appdb_connection.execute_count(filtered_count_query)
+
+        # converting column name to lower case
+        app_df.columns = [column.lower() for column in app_df.columns]
+        datatable_json = []
+
+        # Preparing dataTable records
+        for i in range(app_df.shape[0]):
+            temp_list = []
+            for column_name in header:
+                temp_list.append((app_df[column_name][i]))
+
+            datatable_json.append(temp_list)
+
+    except Exception as e:
+        print("Error occurred while extracting data from application DB."
+                      "Exception type:{}, Exception value:{} occurred while extracting data from application DB.".format(
+            type(e), e))
+        raise
+    finally:
+        appdb_connection.close()
+
+    return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
+
+@api_view(['POST'])
+def update_station_details(request):
+    """
+    This function is called when 'updateairplanedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+
+    # Extracting params from url
+    try:
+        
+        
+        registration_number = request.POST['registration_number']
+        stationed_at = request.POST['stationed_at']
+
+        if stationed_at == '':
+            stationed_at = 'NULL'
+
+        print("Extracted  {}, {} using GET "
+                     "request".format(registration_number, stationed_at))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE airplane 
+                SET  stationed_at = {}
+                where  `registration_number` = '{}'""".format( stationed_at, registration_number)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})
+
+# faa admin
+def airworthy_management(request):
+    # This function is called when 'airplanemanagement' is mentioned in url.
+    return render(request, 'airworthy_management.html')
+
+@api_view(['GET'])
+def get_airworthy_details(request):
+    """
+    This function is called when 'getairplanedetails' is mentioned in url.
+    This request is made from ajax call from datatable under User directory,
+    to render the dataTable and provide additional functionality like sorting, pagination
+    This function handles
+    - parameter extraction
+    - DB connection
+    - renders DataTable
+    """
+    header = ["registration_number", "airworthy"]
+
+    # Extracting params from url
+    try:
+        
+        start = request.GET['start']
+        length = request.GET['length']
+        search = request.GET['search[value]']
+        # Below parameters are available based on sorting activity(optional)
+        sort_col = request.GET.get('order[0][column]')
+        sort_dir = request.GET.get('order[0][dir]')
+        pass
+
+        print("Extracted start,length,search,"
+                     "sort_col,sort_dir {},{},{},{},{} using GET "
+                     "request".format( start, length, search, sort_col, sort_dir))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        raise
+
+    # Extracting data from app DB
+    search = search.lower().replace("'","''")
+
+    if sort_col is None:     
+
+        query = """SELECT registration_number, airworthy,from airplane
+        where LOWER(registration_number) like '%{}%'  or LOWER(airworthy) like '%{}%' or
+        limit {} offset {}""".format(search, search, length, start)
+    else:
+        sort_col = str(int(sort_col) + 1)
+        query = """SELECT registration_number, airworthy from airplane
+        where LOWER(registration_number) like '%{}%' or LOWER(airworthy) like '%{}%' 
+        order by {} {}
+        limit {} offset {}""".format( search, search, sort_col, sort_dir, length, start)
+
+    count_query = "SELECT COUNT(*) FROM airplane"
+    filtered_count_query = """SELECT count(*) from airplane
+                            where LOWER(registration_number) like '%{}%' or LOWER(airworthy) like '%{}%' 
+                            """.format(search, search)
+    #print(filtered_count_query)
+    #print(count_query)
+    #print(query)
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        app_df = app_df.fillna('')
+
+        total_count = appdb_connection.execute_count(count_query)
+        filtered_count = appdb_connection.execute_count(filtered_count_query)
+
+        # converting column name to lower case
+        app_df.columns = [column.lower() for column in app_df.columns]
+        datatable_json = []
+
+        # Preparing dataTable records
+        for i in range(app_df.shape[0]):
+            temp_list = []
+            for column_name in header:
+                temp_list.append((app_df[column_name][i]))
+
+            datatable_json.append(temp_list)
+
+    except Exception as e:
+        print("Error occurred while extracting data from application DB."
+                      "Exception type:{}, Exception value:{} occurred while extracting data from application DB.".format(
+            type(e), e))
+        raise
+    finally:
+        appdb_connection.close()
+
+    return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
+
+
+@api_view(['POST'])
+def update_airworthy_details(request):
+    """
+    This function is called when 'updateairplanedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+
+    # Extracting params from url
+    try:
+        
+        
+        registration_number = request.POST['registration_number']
+        airworthy = request.POST['airworthy']
+        
+        if airworthy == '':
+            airworthy = 'NULL'
+
+        print("Extracted {}, {} using GET "
+                     "request".format( registration_number, airworthy))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE airplane 
+                SET  airworthy = {}
+                where  `registration_number` = '{}'""".format(airworthy, registration_number)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})
+
