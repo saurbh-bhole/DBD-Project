@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import redirect, render
 from numpy import require
 from rest_framework.decorators import api_view
@@ -196,7 +197,7 @@ def medical_test(request):
 @api_view(['GET'])
 def get_traffic_controller_details(request):
 
-    header = ["e_ssn", "most_recent_exam", "image"]
+    header = ["e_ssn", "most_recent_exam", "safety"]
 
     # Extracting params from url
     try:
@@ -221,15 +222,13 @@ def get_traffic_controller_details(request):
     # Extracting data from app DB
     search = search.lower().replace("'","''")
 
-    if sort_col is None:        
-        query = """SELECT e_ssn,most_recent_exam,image from traffic_controllers
-        where LOWER(e_ssn) like '%{}%' or LOWER(most_recent_exam) like '%{}%' or LOWER(image) like '%{}%'
-        limit {} offset {}""".format(search, search, search, length, start)
-    else:
-        sort_col = str(int(sort_col) + 1)
-        query = """SELECT e_ssn,most_recent_exam,image from traffic_controllers
-        where LOWER(e_ssn) like '%{}%' or LOWER(most_recent_exam) like '%{}%' or LOWER(image) like '%{}%' order by {} {}
-        limit {} offset {}""".format(search, search, search, sort_col, sort_dir, length, start)
+
+       
+    print(request.user)
+    query = """SELECT t.e_ssn,t.most_recent_exam,t.safety from traffic_controllers as t
+    ,employee as e  where e.username like '%{}%' and e.e_ssn = t.e_ssn
+    limit {} offset {}""".format(request.user, length, start)
+
 
 
 
@@ -274,27 +273,21 @@ def update_traffic_controller_details(request):
     - DB connection
     - DB record update
     """
-
+    
     # Extracting params from url
     try:
         
-        e_ssn = request.POST['u_e_ssn']
-        e_name = request.POST['u_e_name']
-        e_street = request.POST['u_e_street']
-        e_city = request.POST['u_e_city']
-        e_state = request.POST['u_e_state']
-        e_country = request.POST['u_e_country']
-        e_pincode = request.POST['u_e_pincode']
-        e_phonenumber = request.POST['u_e_phonenumber']
-        e_salary = request.POST['u_e_salary']
-        username = request.POST['u_username']
-        #e_uid = request.POST['u_id']
-        #union_membership_number = request.POST['union_membership_number']
+        e_ssn = request.POST['e_ssn']
+        tc_date = request.POST['most_recent_exam']
+        test_results = request.POST.get('test_results')
 
+        print(test_results)
+        print(test_results)
+        print(test_results)
+        print(test_results)
 
-        print("Extracted  {},{},{},{},{},{},{},{},{} using GET "
-                     "request".format( e_ssn, e_name, e_street, e_city, e_state, e_country, e_pincode, e_phonenumber,
-                     e_salary))
+        print("Extracted  {},{},{} using GET "
+                     "request".format( e_ssn,tc_date,test_results))
     except Exception as e:
         print("Error occurred while parameter extraction."
                 "Exception type:{}, Exception value:{} occurred while parameter "
@@ -303,22 +296,15 @@ def update_traffic_controller_details(request):
         response.status_code = 500 # To announce that the user isn't allowed to publish
         return response
 
-    query = """UPDATE employee 
-                SET `e_ssn` = '{}', `e_name` = '{}', `e_street` = '{}', `e_state` = '{}',
-                `e_city` = '{}', `e_country` = '{}', `e_pincode` = '{}', `e_phonenumber` = '{}',
-                `e_salary` = '{}'
-                where  `e_ssn` = '{}'""".format(e_ssn, e_name, e_street, e_state, e_city, e_country,
-                e_pincode, e_phonenumber, e_salary, e_ssn)
+    query = """UPDATE traffic_controllers 
+                SET `e_ssn` = '{}',`most_recent_exam` = '{}',`safety` = '{}' 
+                where  `e_ssn` = '{}'""".format(e_ssn, tc_date, test_results,e_ssn)
                                     
     print(query)
     try:
         appdb_connection = DBConnection('default')
         appdb_connection.execute_query(query)
-
-        #Update first name in the user model as it is the only details that we are storing
-        User.objects.filter(username=username).update(first_name = e_name)
         
-
     except Exception as e:
         print("Error occurred while saving data."
                 "Exception type:{}, Exception value:{} while saving "
