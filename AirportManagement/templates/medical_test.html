@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Medical Test</h2>
+		<br>
+
+
+	
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>SSN</th>
+					<th>Recent Medical Exam</th>
+					<th>Uploaded Image</th>
+                    <th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Medical Test details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'tc_edit_form' enctype="multipart/form-data">		  
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Date:</label>
+                            <input type="date" class="form-control" id="most_recent_exam" name="most_recent_exam" value="2018-07-22" required="1">	  
+						</div>
+                        <br>    
+						<div class="form-group">		  
+							<label>Upload Medical Test Results:</label>
+							<input type="file" class="form-control" id="image" name="image" accept="image/*,.pdf" required="1">		  
+						</div>
+
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update Test details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getemployeedetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>",
+					"orderable": false,
+					"width": "30px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				console.log(data);
+				console.log($(this)[0].className);
+				if (($(this)[0].className)=='btn btn-danger  btn-sm'){
+					$('#d_e_ssn').val(data[0]);
+					$('#d_username').val(data[3]);		
+				}
+				else{
+					$('#u_e_ssn').val(data[0]);
+					$('#u_e_name').val(data[1]);
+					$('#u_e_street').val(data[4]);
+					$('#u_e_city').val(data[5]);
+					$('#u_e_state').val(data[6]);
+					$('#u_e_country').val(data[7]);
+					$('#u_e_pincode').val(data[8]);
+					$('#u_e_phonenumber').val(data[2]);
+					$('#u_e_salary').val(data[9]);
+					$('#u_username').val(data[3]);					
+				}
+			});
+			
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updateemployeedetails/',
+					data: {
+						u_e_ssn : $('#u_e_ssn').val(),
+						u_e_name : $('#u_e_name').val(),
+						u_e_street : $('#u_e_street').val(),
+						u_e_city : $('#u_e_city').val(),
+						u_e_state : $('#u_e_state').val(),
+						u_e_country : $('#u_e_country').val(),
+						u_e_pincode : $('#u_e_pincode').val(),
+						u_e_phonenumber : $('#u_e_phonenumber').val(),
+						u_e_salary : $('#u_e_salary').val(),
+						u_username : $('#u_username').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+						
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Employee updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			
+		} );
+
+		
+	</script>
+
+{% endblock %}

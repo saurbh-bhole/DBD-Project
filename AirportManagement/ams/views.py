@@ -185,6 +185,166 @@ def get_user_details(request):
     return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
 
 
+@api_view(['GET'])
+@login_required(login_url='/login/')
+def medical_test(request):
+    # This function is called when 'employeemanagement' is mentioned in url.
+    return render(request, 'medical_test.html')
+
+
+
+@api_view(['GET'])
+def get_traffic_controller_details(request):
+
+    header = ["e_ssn", "most_recent_exam", "image"]
+
+    # Extracting params from url
+    try:
+        
+        start = request.GET['start']
+        length = request.GET['length']
+        search = request.GET['search[value]']
+        # Below parameters are available based on sorting activity(optional)
+        sort_col = request.GET.get('order[0][column]')
+        sort_dir = request.GET.get('order[0][dir]')
+        pass
+
+        print("Extracted start,length,search,"
+                     "sort_col,sort_dir {},{},{},{},{} using GET "
+                     "request".format( start, length, search, sort_col, sort_dir))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        raise
+
+    # Extracting data from app DB
+    search = search.lower().replace("'","''")
+
+    if sort_col is None:        
+        query = """SELECT e_ssn,most_recent_exam,image from traffic_controllers
+        where LOWER(e_ssn) like '%{}%' or LOWER(most_recent_exam) like '%{}%' or LOWER(image) like '%{}%'
+        limit {} offset {}""".format(search, search, search, length, start)
+    else:
+        sort_col = str(int(sort_col) + 1)
+        query = """SELECT e_ssn,most_recent_exam,image from traffic_controllers
+        where LOWER(e_ssn) like '%{}%' or LOWER(most_recent_exam) like '%{}%' or LOWER(image) like '%{}%' order by {} {}
+        limit {} offset {}""".format(search, search, search, sort_col, sort_dir, length, start)
+
+
+
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        total_count = 1
+        filtered_count = 1
+
+        # converting column name to lower case
+        app_df.columns = [column.lower() for column in app_df.columns]
+        datatable_json = []
+
+        # Preparing dataTable records
+        for i in range(app_df.shape[0]):
+            temp_list = []
+            for column_name in header:
+                temp_list.append((app_df[column_name][i]))
+
+            datatable_json.append(temp_list)
+
+    except Exception as e:
+        print("Error occurred while extracting data from application DB."
+                      "Exception type:{}, Exception value:{} occurred while extracting data from application DB.".format(
+            type(e), e))
+        raise
+    finally:
+        appdb_connection.close()
+
+    return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
+
+
+@api_view(['POST'])
+def update_traffic_controller_details(request):
+    """
+    This function is called when 'updateemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under Edit button,
+    to update employee details
+    This function handles
+    - parameter extraction
+    - DB connection
+    - DB record update
+    """
+
+    # Extracting params from url
+    try:
+        
+        e_ssn = request.POST['u_e_ssn']
+        e_name = request.POST['u_e_name']
+        e_street = request.POST['u_e_street']
+        e_city = request.POST['u_e_city']
+        e_state = request.POST['u_e_state']
+        e_country = request.POST['u_e_country']
+        e_pincode = request.POST['u_e_pincode']
+        e_phonenumber = request.POST['u_e_phonenumber']
+        e_salary = request.POST['u_e_salary']
+        username = request.POST['u_username']
+        #e_uid = request.POST['u_id']
+        #union_membership_number = request.POST['union_membership_number']
+
+
+        print("Extracted  {},{},{},{},{},{},{},{},{} using GET "
+                     "request".format( e_ssn, e_name, e_street, e_city, e_state, e_country, e_pincode, e_phonenumber,
+                     e_salary))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+
+    query = """UPDATE employee 
+                SET `e_ssn` = '{}', `e_name` = '{}', `e_street` = '{}', `e_state` = '{}',
+                `e_city` = '{}', `e_country` = '{}', `e_pincode` = '{}', `e_phonenumber` = '{}',
+                `e_salary` = '{}'
+                where  `e_ssn` = '{}'""".format(e_ssn, e_name, e_street, e_state, e_city, e_country,
+                e_pincode, e_phonenumber, e_salary, e_ssn)
+                                    
+    print(query)
+    try:
+        appdb_connection = DBConnection('default')
+        appdb_connection.execute_query(query)
+
+        #Update first name in the user model as it is the only details that we are storing
+        User.objects.filter(username=username).update(first_name = e_name)
+        
+
+    except Exception as e:
+        print("Error occurred while saving data."
+                "Exception type:{}, Exception value:{} while saving "
+                "data.".format(type(e), e))
+        response = Response({"error": str(e)})
+        response.status_code = 500 # To announce that the user isn't allowed to publish
+        return response
+        
+    return Response({'data': 'success'})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @api_view(['GET'])
 @login_required(login_url='/login/')

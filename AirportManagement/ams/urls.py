@@ -15,4 +15,7 @@ urlpatterns = [
     path(r'insertemployeedetails/', views.insert_employee_details, name = 'insertemployeedetails'),
     path(r'updateemployeedetails/', views.update_employee_details, name = 'updateemployeedetails'),
     path(r'deleteemployeedetails/', views.delete_employee_details, name = 'deleteemployeedetails'),
+    path(r'medicaltest/', views.medical_test, name = 'medicaltest'),
+    path(r'gettrafficcontrollerdetails/', views.get_traffic_controller_details, name = 'medicaltest'),
+    path(r'updatetrafficcontrollerdetails/', views.update_traffic_controller_details, name = 'medicaltest'),
 ]
