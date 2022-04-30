@@ -18,6 +18,13 @@ urlpatterns = [
     path(r'updateemployeedetails/', views.update_employee_details, name = 'updateemployeedetails'),
     path(r'deleteemployeedetails/', views.delete_employee_details, name = 'deleteemployeedetails'),
 
+    path(r'medicaltest/', views.medical_test, name = 'medicaltest'),
+    path(r'gettrafficcontrollerdetails/', views.get_traffic_controller_details, name = 'medicaltest'),
+    path(r'updatetrafficcontrollerdetails/', views.update_traffic_controller_details, name = 'medicaltest'),
+    path(r'allmedicaltests/', views.all_medical_tests, name = 'medicaltest'),
+    path(r'getalltrafficcontrollerdetails/', views.get__all_traffic_controller_details, name = 'medicaltest'),
+
+
     #union details
     path(r'unionmanagement/', views.admin_union_management, name = 'unionemanagement'),
     path(r'getuniondetails/', views.get_union_details, name = 'getuniondetails'),

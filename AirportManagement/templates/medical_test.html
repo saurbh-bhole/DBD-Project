@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Medical Test</h2>
+		<br>
+
+
+	
+		<table id="tc-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>SSN</th>
+					<th>Recent Medical Exam</th>
+					<th>Test Results</th>
+                    <th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+
+	<!-- Edit employee modal -->
+	<div id="edit_tc_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Medical Test details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'tc_edit_form' method="post">		  
+						{% csrf_token %}
+                        <div class="form-group">		  
+							<label>SSN:</label>
+                            <input type="text" class="form-control" id="e_ssn" name="e_ssn" readonly>	  
+						</div>
+
+						<div class="form-group">		  
+							<label>Date:</label>
+                            <input type="date" class="form-control" id="most_recent_exam" name="most_recent_exam" value="2022-04-30" required="1">	  
+						</div>
+                        <br>    
+						<div class = "form-group">
+							<label for="test_results">Test Results:</label>
+								<select id="test_results" name="test_results" class="form-control">
+									<option id="passed" name="passed" value="passed">Passed</option>
+									<option id="failed" name="failed" value="failed">Failed</option>
+								</select>
+						</div>
+
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update Test details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#tc-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/gettrafficcontrollerdetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_tc_modal'>Update</button>",
+					"orderable": false,
+					"width": "30px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#tc-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				console.log(data);
+				console.log($(this)[0].className);
+
+                $('#e_ssn').val(data[0]);
+                $('#most_recent_exam').val(data[1]);
+                $('#test_results').val(data[2]);
+					
+				
+			});
+			
+			// edit employee ajax call
+			$(document).on('submit', '#tc_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updatetrafficcontrollerdetails/',
+					data: {
+						e_ssn : $('#e_ssn').val(),
+						most_recent_exam : $('#most_recent_exam').val(),
+						test_results : $('#test_results').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+						
+					},
+					success: function (result) {
+						$('#edit_tc_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Employee updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			
+		} );
+
+		
+	</script>
+
+{% endblock %}
