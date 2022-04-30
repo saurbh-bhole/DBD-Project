@@ -11,6 +11,9 @@
 		
 		<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 		<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 		
 		<style>
 			th {
@@ -52,9 +55,26 @@
                 <div class="dropdown-menu dropdown-menu-fix">
                   {% if user.is_superuser %}
                   <a class="dropdown-item" href="/employeemanagement">Employee Management</a>
-                  {% endif %}
-                  <a class="dropdown-item" href="/medicaltest">Medical Test</a>
+                  <a class="dropdown-item" href="/unionmanagement">Union Management</a>
+                  <a class="dropdown-item" href="/modelmanagement">Model Management</a>
+                  <a class="dropdown-item" href="/airplanemanagement">Airplane Management</a>
                   <a class="dropdown-item" href="/allmedicaltests">View Medical Tests</a>
+                  {% endif %}
+
+                  {% if request.session.role == "technician" %}
+                  <a class="dropdown-item" href="/tech_test_details">Test Details</a>
+                  {% endif %}
+
+                  {% if request.session.role == "traffic_controller" %}
+                  <a class="dropdown-item" href="/medicaltest">Medical Test</a>
+                  <a class="dropdown-item" href="/stationmanagement">Update Station</a>
+                  {% endif %}
+                  {% if request.session.role == "faa_admin" %}
+                  <a class="dropdown-item" href="/airworthymanagement">Update Airworthy status</a>
+                  <a class="dropdown-item" href="/faa_test_details">Test Details</a>
+                  {% endif %}
+
+
                 </div>
               </li>
           

@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Airplane Management</h2>
+		<br>
+		<div class="align-right">
+			<button  class="btn btn-success  btn-sm" data-toggle="modal" data-target = "#new_emp_modal"> + New Airplane</button>
+		</div>
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>Registation #</th>
+					<th>Stationed At</th>
+                    <th>Airworthy</th>
+                    <th>Model #</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+	
+	<!-- Add union modal -->
+	<div id="new_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Add Airplane</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'insert_emp_form'>
+						{% csrf_token %}
+						<div class="form-group">		  
+							<label>Registration Number:</label>
+							<input type="number" class="form-control" name="registration_number" id="registration_number" required="1">
+						</div>
+                        <div class="form-group">		  
+							<label>Station At:</label>
+							<input type="number" class="form-control" name="stationed_at" id="stationed_at" min = "1" max = "40">
+						</div>
+						<div class = "form-group">
+							<label for="airworthy">Airworthy:</label>
+								<select id="airworthy" name="airworthy" class="form-control">
+									<option value=""></option>
+									<option value="1">Yes(1)</option>
+									<option value="0">No(0)</option>
+								</select>
+						</div>
+                        
+						<div class = "form-group" id = "model_field">
+							<label for="model_number">Model Number:</label>
+							<br>
+							<select id="model_number" style='width: 100%;' required></select>
+						</div>
+		
+						<div class="form-group">
+							<button class="btn btn-primary  mt-1" type="submit">Add Airplane</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+	<!-- Delete employee modal -->
+	<div id="delete_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Delete Airplane details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = "delete_emp_form">		  
+						{% csrf_token %}
+						<div class="form-group ">		  
+							<label>Registration Number:</label>
+							<input type="number" class="form-control" name="d_registration_number" id="d_registration_number" required="1">		  
+						</div>
+						
+						<div class="form-group">
+							<button class="btn btn-danger mt-1" type="submit">Delete Airplane details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+
+
+	<!-- Edit employee modal -->
+	<div id="edit_emp_modal" class="modal" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Update Airplane details</h4>
+				</div>
+				<div class="modal-body">
+					<form id = 'emp_edit_form'>		  
+						{% csrf_token %}
+						
+						<div class="form-group hide">		  
+							<label>Registration Number:</label>
+							<input type="number" class="form-control" name="u_registration_number" id = "u_registration_number" required="1">
+						</div>
+						<div class="form-group ">		  
+							<label>Stationed at:</label>
+							<input type="number" class="form-control" name="u_stationed_at" id = "u_stationed_at" min = "1" max = "40" >
+						</div>
+                        
+						<div class = "form-group">
+							<label for="u_airworthy">Airworthy:</label>
+								<select id="u_airworthy" name="u_airworthy" class="form-control">
+									<option value=""></option>
+									<option value="1">Yes(1)</option>
+									<option value="0">No(0)</option>
+								</select>
+						</div>
+						<div class = "form-group" id = "model_field">
+							<label for="u_model_number">Model Number:</label>
+							<br>
+							<select id="u_model_number" style='width: 100%;' required></select>
+						</div>
+                        
+						<div class="form-group">
+							<button class="btn btn-primary mt-1" type="submit">Update airplane details</button>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+			</div>	  
+		</div>		  
+	</div>
+	
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getairplanedetails/",
+				//"pageLength": 2
+				"columnDefs": [{
+					"targets": -1,
+					"data": null,
+					"defaultContent": "<button class='btn btn-warning btn-sm' data-toggle='modal' data-target = '#edit_emp_modal'>Edit</button>/<button class='btn btn-danger  btn-sm' data-toggle='modal' data-target = '#delete_emp_modal'>Delete</a>",
+					"orderable": false,
+					"width": "81px"						
+					
+				}]
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+				//alert( data[0] +"'s salary is: "+ data[ 5 ] );
+				//console.log(data);
+				//console.log($(this)[0].className);
+				if (($(this)[0].className)=='btn btn-danger  btn-sm'){
+					$('#d_registration_number').val(data[0]);
+					
+				}
+				else{
+                    $('#u_registration_number').val(data[0]);
+					$('#u_stationed_at').val(data[1]);
+                    $('#u_airworthy').val(data[2]);
+                    $('#u_model_number').val(data[3]);
+				}
+			});
+			
+			// add employee ajax call
+			$(document).on('submit', '#insert_emp_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/insertairplanedetails/',
+					data: {
+						registration_number : $('#registration_number').val(),
+                        stationed_at : $('#stationed_at').val(),
+                        airworthy : $('#airworthy').val(),
+                        model_number : $('#model_number').val(),
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#new_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Airplane added successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// edit employee ajax call
+			$(document).on('submit', '#emp_edit_form', function(e){
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/updateairplanedetails/',
+					data: {
+						registration_number : $('#u_registration_number').val(),
+                        stationed_at : $('#u_stationed_at').val(),
+                        airworthy : $('#u_airworthy').val(),
+                        model_number : $('#u_model_number').val(),	
+                        csrfmiddlewaretoken: "{{csrf_token}}"					
+					},
+					success: function (result) {
+						$('#edit_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Airplane updated successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+
+			// delete employee 
+			$(document).on('submit', '#delete_emp_form', function(e){
+				console.log($('#d_uid').val());
+				e.preventDefault();
+				$.ajax({
+					type:'POST',
+					url:'/deleteairplanedetails/',
+					data: {
+						registration_number : $('#d_registration_number').val(),					
+						csrfmiddlewaretoken: "{{csrf_token}}"
+					},
+					success: function (result) {
+						$('#delete_emp_modal').modal('toggle');
+						$('#alert_message').show();
+						$('#text_message').text("Airplane deleted successfully");
+						table.ajax.reload();
+					},
+					error :function(result) { 
+						alert("Error: " + result.responseJSON.error); 
+					}
+				})
+			});
+		
+			// dynamic dropdown for model
+			$('#model_number').select2({
+				ajax: {
+					url: '/dropdown/?param=model',
+					dataType: 'json',
+					processResults: function (data) {
+						return {
+							results: $.map(data.results, function (item) {
+								//console.log(item.id, item.text);
+								return {
+									text: item.text,
+									id: item.id
+								}
+							})
+						};
+					}
+					
+				},
+				dropdownParent: $('#new_emp_modal .modal-content')			
+			});
+		
+		// dynamic dropdown for model
+		$('#u_model_number').select2({
+				ajax: {
+					url: '/dropdown/?param=model',
+					dataType: 'json',
+					processResults: function (data) {
+						return {
+							results: $.map(data.results, function (item) {
+								//console.log(item.id, item.text);
+								return {
+									text: item.text,
+									id: item.id
+								}
+							})
+						};
+					}
+					
+				},
+				dropdownParent: $('#edit_emp_modal .modal-content')			
+			});
+
+		});
+
+		
+	</script>
+
+{% endblock %}

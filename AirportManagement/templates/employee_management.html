@@ -92,6 +92,11 @@
 									<option value="others">Others</option>
 								</select>
 						</div>
+						<div class = "form-group" id = "model_field">
+							<label for="model">Model Expertise:</label>
+							<br>
+							<select id="model" style='width: 100%;' required></select>
+						</div>
 						<div class="form-group">		  
 							<label>Salary:</label>
 							<input type="number" class="form-control" name="e_salary" id="e_salary" required="1">
@@ -104,15 +109,12 @@
 							<label>Password:</label>
 							<input type="password" class="form-control" name="password" id="password" required="1">		  
 						</div>
-						<div class="form-group">		  
-							<label>Union id:</label>
-							<input type="number" class="form-control" name="u_id" id="u_id" required="1">
+						<div class = "form-group" id = "union_field">
+							<label for="union">Union:</label>
+							<br>
+							<select id="union" style='width: 100%;' required></select>
 						</div>
-						<div class="form-group">		  
-							<label>Union Membership #:</label>
-							<input type="number" class="form-control" name="union_membership_number" id="union_membership_number" required="1">
-						</div>
-		
+
 						<div class="form-group">
 							<button class="btn btn-primary  mt-1" type="submit">Add Employee</button>
 						</div>
@@ -274,6 +276,22 @@
 					$('#u_username').val(data[3]);					
 				}
 			});
+
+			$("#role").change(function () {				
+				console.log("in role change");
+				console.log($('#role').val());
+				if ($('#role').val() == "technician"){
+					$('#model_field').show();		
+					document.getElementById("model").required = true;
+				}
+				else{
+					$('#model_field').hide();		
+					document.getElementById("model").required = false;
+				}
+				console.log($('#union').val());
+				console.log($('#model').val());
+				
+			});
 			
 			// add employee ajax call
 			$(document).on('submit', '#insert_emp_form', function(e){
@@ -291,11 +309,11 @@
 						e_pincode : $('#e_pincode').val(),
 						e_phonenumber : $('#e_phonenumber').val(),
 						role : $('#role').val(),
+						model_number : $('#model').val(),
 						e_salary : $('#e_salary').val(),
 						username : $('#username').val(),
 						password : $('#password').val(),
-						u_id : $('#u_id').val(),
-						union_membership_number : $('#union_membership_number').val(),
+						u_id : $('#union').val(),
 						csrfmiddlewaretoken: "{{csrf_token}}"
 					},
 					success: function (result) {
@@ -364,8 +382,50 @@
 					}
 				})
 			});
+
+			// dynamic dropdown for model
+			$('#model').select2({
+				ajax: {
+					url: '/dropdown/?param=model',
+					dataType: 'json',
+					processResults: function (data) {
+						return {
+							results: $.map(data.results, function (item) {
+								//console.log(item.id, item.text);
+								return {
+									text: item.text,
+									id: item.id
+								}
+							})
+						};
+					}
+					
+				},
+				dropdownParent: $('#new_emp_modal .modal-content')			
+			});
 			
-		} );
+			// dynamic dropdown for union
+			$('#union').select2({
+				ajax: {
+					url: '/dropdown/?param=union',
+					dataType: 'json',
+					processResults: function (data) {
+						return {
+							results: $.map(data.results, function (item) {
+								//console.log(item.id, item.text);
+								return {
+									text: item.text,
+									id: item.id
+								}
+							})
+						};
+					}
+					
+				},
+				dropdownParent: $('#new_emp_modal .modal-content')			
+			});
+			
+		});
 
 		
 	</script>
