@@ -188,6 +188,109 @@ def get_user_details(request):
 
 @api_view(['GET'])
 @login_required(login_url='/login/')
+def all_medical_tests(request):
+    # This function is called when 'employeemanagement' is mentioned in url.
+    return render(request, 'all_medical_tests.html')
+
+
+
+
+@api_view(['GET'])
+def get__all_traffic_controller_details(request):
+    """
+    This function is called when 'getemployeedetails' is mentioned in url.
+    This request is made from ajax call from datatable under User directory,
+    to render the dataTable and provide additional functionality like sorting, pagination
+    This function handles
+    - parameter extraction
+    - DB connection
+    - renders DataTable
+    """
+    header = ["e_ssn", "e_name", "most_recent_exam", "safety"]
+
+    # Extracting params from url
+    try:
+        
+        start = request.GET['start']
+        length = request.GET['length']
+        search = request.GET['search[value]']
+        # Below parameters are available based on sorting activity(optional)
+        sort_col = request.GET.get('order[0][column]')
+        sort_dir = request.GET.get('order[0][dir]')
+        pass
+
+        print("Extracted start,length,search,"
+                     "sort_col,sort_dir {},{},{},{},{} using GET "
+                     "request".format( start, length, search, sort_col, sort_dir))
+    except Exception as e:
+        print("Error occurred while parameter extraction."
+                "Exception type:{}, Exception value:{} occurred while parameter "
+                "extraction.".format(type(e), e))
+        raise
+
+    # Extracting data from app DB
+    search = search.lower().replace("'","''")
+
+    if sort_col is None:        
+        query = """SELECT t.e_ssn, e.e_name, t.most_recent_exam,t.safety
+        from employee as e,traffic_controllers as t
+        where t.e_ssn = e.e_ssn and (LOWER(e.e_name) like '%{}%' or LOWER(t.e_ssn) like '%{}%' 
+        or LOWER(t.most_recent_exam) like '%{}%' or LOWER(t.safety) like '%{}%')
+        limit {} offset {}""".format(search, search, search, search, length, start)
+    else:
+        sort_col = str(int(sort_col) + 1)
+        query = """SELECT t.e_ssn, e.e_name, t.most_recent_exam,t.safety
+        from employee as e,traffic_controllers as t
+        where t.e_ssn = e.e_ssn and (LOWER(e.e_name) like '%{}%' or LOWER(t.e_ssn) like '%{}%' 
+        or LOWER(t.most_recent_exam) like '%{}%' or LOWER(t.safety) like '%{}%') order by {} {}
+        limit {} offset {}""".format(search, search, search, search, sort_col, sort_dir, length, start)
+
+    count_query = "SELECT COUNT(*) FROM traffic_controllers"
+    filtered_count_query = """SELECT count(*)
+                            from employee as e,traffic_controllers as t
+                            where t.e_ssn = e.e_ssn and (LOWER(e.e_name) like '%{}%' or LOWER(t.e_ssn) like '%{}%' 
+                            or LOWER(t.most_recent_exam) like '%{}%' or LOWER(t.safety) like '%{}%')
+                            """.format(search, search, search, search)
+    #print(filtered_count_query)
+    #print(count_query)
+    #print(query)
+    try:
+        # Data extraction from DB
+        appdb_connection = DBConnection('default')
+        app_df = appdb_connection.read_table(query)
+        total_count = appdb_connection.execute_count(count_query)
+        filtered_count = appdb_connection.execute_count(filtered_count_query)
+
+        # converting column name to lower case
+        app_df.columns = [column.lower() for column in app_df.columns]
+        datatable_json = []
+
+        # Preparing dataTable records
+        for i in range(app_df.shape[0]):
+            temp_list = []
+            for column_name in header:
+                temp_list.append((app_df[column_name][i]))
+
+            datatable_json.append(temp_list)
+
+    except Exception as e:
+        print("Error occurred while extracting data from application DB."
+                      "Exception type:{}, Exception value:{} occurred while extracting data from application DB.".format(
+            type(e), e))
+        raise
+    finally:
+        appdb_connection.close()
+
+    return Response({'recordsTotal': total_count, 'recordsFiltered': filtered_count, 'data': datatable_json})
+
+
+
+
+
+
+
+@api_view(['GET'])
+@login_required(login_url='/login/')
 def medical_test(request):
     # This function is called when 'employeemanagement' is mentioned in url.
     return render(request, 'medical_test.html')
@@ -279,7 +382,7 @@ def update_traffic_controller_details(request):
         
         e_ssn = request.POST['e_ssn']
         tc_date = request.POST['most_recent_exam']
-        test_results = request.POST.get('test_results')
+        test_results = request.POST['test_results']
 
         print(test_results)
         print(test_results)

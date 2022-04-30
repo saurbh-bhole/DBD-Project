@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<div>
+		<h2>Medical Tests of Each Traffic Controller</h2>
+		<br>
+
+		<div class="alert alert-success alert-dismissable m-2" style='display: none' id = 'alert_message' role="alert">
+
+			<button type="button" class="close" data-dismiss="alert" aria-label="close">
+				<span aria-hidden="true">x</span>
+			</button>
+			<p id = 'text_message'></p>
+		</div>
+
+		
+		<hr>
+		<table id="emp-table" class="cell-border compact stripe">
+			<thead>
+				<tr>
+					<th>SSN</th>
+					<th>Name</th>
+					<th>Most Recent Medical Test</th>
+					<th>Test Result</th>
+                    
+
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+
+
+	<!-- Loading datatable records using ajax-->
+	<script language="javascript">
+
+		$(document).ready(function() {
+			var table = $('#emp-table').DataTable( {
+				"processing": true,
+				"serverSide": true,
+				"ajax": "/getalltrafficcontrollerdetails/",
+				//"pageLength": 2
+			});
+
+			// load data in text fields on button click
+			$('#emp-table tbody').on( 'click', 'button', function () {
+				var data = table.row( $(this).parents('tr') ).data();
+                $('#e_ssn').val(data[0]);
+                $('#e_name').val(data[1]);
+                $('#most_recent_exams').val(data[2]);
+                $('#safety').val(data[3]);					
+				
+			});			
+		} );
+
+		
+	</script>
+
+{% endblock %}

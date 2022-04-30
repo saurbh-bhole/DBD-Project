@@ -18,4 +18,6 @@ urlpatterns = [
     path(r'medicaltest/', views.medical_test, name = 'medicaltest'),
     path(r'gettrafficcontrollerdetails/', views.get_traffic_controller_details, name = 'medicaltest'),
     path(r'updatetrafficcontrollerdetails/', views.update_traffic_controller_details, name = 'medicaltest'),
+    path(r'allmedicaltests/', views.all_medical_tests, name = 'medicaltest'),
+    path(r'getalltrafficcontrollerdetails/', views.get__all_traffic_controller_details, name = 'medicaltest'),
 ]

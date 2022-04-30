@@ -30,7 +30,7 @@
 					<h4 class="modal-title">Update Medical Test details</h4>
 				</div>
 				<div class="modal-body">
-					<form id = 'tc_edit_form' enctype="multipart/form-data">		  
+					<form id = 'tc_edit_form' method="post">		  
 						{% csrf_token %}
                         <div class="form-group">		  
 							<label>SSN:</label>
@@ -106,7 +106,7 @@
 					data: {
 						e_ssn : $('#e_ssn').val(),
 						most_recent_exam : $('#most_recent_exam').val(),
-						image : $('#test_results').val(),
+						test_results : $('#test_results').val(),
 						csrfmiddlewaretoken: "{{csrf_token}}"
 						
 					},
