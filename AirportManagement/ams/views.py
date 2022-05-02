@@ -1,6 +1,8 @@
+from asyncio.windows_events import NULL
 import os
 from django.shortcuts import redirect, render
 from numpy import require
+from requests import session
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 #from .db_extraction import DBConnection
@@ -67,7 +69,13 @@ def login(request):
                             on e.e_ssn = t.e_ssn where username = '{}'""".format(username)
             faa_count = """select count(*) from faa_admin t join employee e 
                             on e.e_ssn = t.e_ssn where username = '{}'""".format(username)
+
+            
             appdb_connection = DBConnection('default')
+            ssn_query = """select e_ssn from employee where username = '{}'""".format(username)
+            app_df = appdb_connection.read_table(ssn_query)
+            request.session["ssn"] = app_df['e_ssn'][0]             
+            
             tech_count = appdb_connection.execute_count(tech_count)
             tc_count = appdb_connection.execute_count(tc_count)
             faa_count = appdb_connection.execute_count(faa_count)
@@ -102,16 +110,40 @@ def home(request):
     count_query_airworthy = "select count(*) from airplane where airworthy > 0"
     airworthy_count = appdb_connection.execute_count(count_query_airworthy)
     unairworthy_count = appdb_connection.execute_count(count_query_unairworthy)
-    data = []
-    label = []
-    data.append(airworthy_count)
-    label.append("Airworthy")
-    data.append(unairworthy_count)
-    label.append("Not Airworthy")
+    data_airworthy = []
+    label_airworthy = []
+    data_airworthy.append(airworthy_count)
+    label_airworthy.append("Airworthy")
+    data_airworthy.append(unairworthy_count)
+    label_airworthy.append("Not Airworthy")
+
+    label_tech = []
+    data_tech = []
+    if request.session['role'] == 'technician':
+        tech_querry = """select airplane.model_number, sum(number_of_hours) from test 
+        left join airplane on test.registration_number = airplane.registration_number
+        where tech_id = '{}' group by airplane.model_number""".format(request.session['ssn'])
+
+        app_df = appdb_connection.read_table(tech_querry)
+        temp_list = []
+        for i in range(app_df.shape[0]):
+            for column_name in app_df:
+                temp_list.append((app_df[column_name][i]))
+        
+        j = 0
+        for i in temp_list:
+            if j%2 == 0:
+                label_tech.append(i)
+            else:
+                data_tech.append(i)
+            j+=1
+        
 
     return render(request, 'home.html', {
-        'labels': label,
-        'data': data,
+        'label_airworthy': label_airworthy,
+        'data_airworthy': data_airworthy,
+        'label_tech' : label_tech,
+        'data_tech' : data_tech
     })
 
 @login_required(login_url='/login/')
@@ -406,10 +438,6 @@ def update_traffic_controller_details(request):
         tc_date = request.POST['most_recent_exam']
         test_results = request.POST['test_results']
 
-        print(test_results)
-        print(test_results)
-        print(test_results)
-        print(test_results)
 
         print("Extracted  {},{},{} using GET "
                      "request".format( e_ssn,tc_date,test_results))
@@ -2108,7 +2136,6 @@ def insert_test_details(request):
     # Extracting params from url
     try:        
         t_name = request.POST['t_name']
-        number_of_hours = request.POST['number_of_hours']
         maximum_possible_score = request.POST['maximum_possible_score']
         registration_number = request.POST['registration_number']
         tech_id = request.POST['tech_id']
@@ -2134,7 +2161,7 @@ def insert_test_details(request):
     query = """INSERT INTO test (`t_name`, `date`, `number_of_hours`, `maximum_possible_score`, 
                                     `registration_number`, `tech_id`, `faa_id`) 
                                     VALUES ('{}', CURDATE(), '{}', '{}', '{}', '{}', '{}')
-                                    """.format(t_name , number_of_hours, maximum_possible_score, 
+                                    """.format(t_name , NULL, maximum_possible_score, 
                                     registration_number , tech_id, faa_id)
     
     try:
@@ -2167,7 +2194,6 @@ def update_test_details(request):
         
         t_number = request.POST['t_number']
         t_name = request.POST['t_name']
-        number_of_hours = request.POST['number_of_hours']
         maximum_possible_score = request.POST['maximum_possible_score']
         registration_number = request.POST['registration_number']
         tech_id = request.POST['tech_id']
@@ -2181,9 +2207,9 @@ def update_test_details(request):
         return response
 
     query = """UPDATE test 
-                SET `t_name` = '{}', `number_of_hours` = '{}', `maximum_possible_score` = '{}',
+                SET `t_name` = '{}', `maximum_possible_score` = '{}',
                 `registration_number` = '{}', `tech_id` = '{}'
-                where  `t_number` = '{}'""".format(t_name, number_of_hours, maximum_possible_score, registration_number, tech_id, t_number)
+                where  `t_number` = '{}'""".format(t_name, maximum_possible_score, registration_number, tech_id, t_number)
                                     
     print(query)
     try:
@@ -2266,7 +2292,9 @@ def update_score(request):
     try:
         
         t_number = request.POST['t_number']
+        number_of_hours = request.POST['number_of_hours']
         score = request.POST['score']
+        
 
     except Exception as e:
         print("Error occurred while parameter extraction."
@@ -2277,8 +2305,8 @@ def update_score(request):
         return response
 
     query = """UPDATE test 
-                SET `score` = '{}'
-                where  `t_number` = '{}'""".format(score, t_number)
+                SET `score` = '{}',`number_of_hours` = '{}'
+                where  `t_number` = '{}'""".format(score,number_of_hours,t_number)
                                     
     print(query)
     try:

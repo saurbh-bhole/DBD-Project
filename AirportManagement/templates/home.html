@@ -2,23 +2,40 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 
-<div id="container" style="width: 50%;">
-    <canvas id="pie-chart"></canvas>  
+<div id="container" style="display:flex; width: 50%;">
+    <canvas id="pie-chart_airworthy"></canvas> 
+    <canvas id="pie-chart_tech"></canvas>  
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
   <script>
 
-    var config = {
+    var config_airworthy = {
       type: 'pie',
       data: {
         datasets: [{
-          data: {{ data|safe }},
+          data: {{ data_airworthy|safe }},
           backgroundColor: [
             '#0000FF', '#FF0000', '#AF0320'],
           label: 'Airworthy'    
         }],
-        labels: {{ labels|safe }}
+        labels: {{ label_airworthy|safe }}
+      },
+      options: {
+        responsive: true
+      }
+    };
+
+    var config_tech = {
+      type: 'pie',
+      data: {
+        datasets: [{
+          data: {{ data_tech|safe }},
+          backgroundColor: [
+            '#0000FF', '#FF0000', '#AF0320'],
+          label: 'Airworthy'    
+        }],
+        labels: {{ label_tech|safe }}
       },
       options: {
         responsive: true
@@ -26,8 +43,10 @@
     };
 
     window.onload = function() {
-      var ctx = document.getElementById('pie-chart').getContext('2d');
-      window.myPie = new Chart(ctx, config);
+      var ctx_airworthy = document.getElementById('pie-chart_airworthy').getContext('2d');
+      window.myPie = new Chart(ctx_airworthy, config_airworthy);
+      var ctx_tech = document.getElementById('pie-chart_tech').getContext('2d');
+      window.myPie = new Chart(ctx_tech, config_tech);
     };
 
   </script>

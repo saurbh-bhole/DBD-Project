@@ -42,15 +42,23 @@
 					<h4 class="modal-title">Update Score</h4>
 				</div>
 				<div class="modal-body">
-					<form id = 'emp_edit_form'>		  
+					<form id = 'emp_edit_form' name="emp_edit_form" onsubmit="return validateForm()">		  
 						{% csrf_token %}
                         <div class="form-group hide">		  
 							<label>number:</label>
 							<input type="number" class="form-control" name="t_number"  id="t_number" required="1">		  
 						</div>
 						<div class="form-group">		  
+							<label>Hours:</label>
+							<input type="number" class="form-control" name="number_of_hours" id="number_of_hours" required="1">		  
+						</div>
+						<div class="form-group">		  
 							<label>Score:</label>
 							<input type="number" class="form-control" name="score" id="score" required="1">		  
+						</div>
+						<div class="form-group">		  
+							<label>Max Score:</label>
+							<input type="number" class="form-control" name="maximum_possible_score" id="maximum_possible_score" readonly>		  
 						</div>
                         <div class="form-group">
 							<button class="btn btn-primary mt-1" type="submit">Update score</button>
@@ -69,6 +77,8 @@
 	<!-- Loading datatable records using ajax-->
 	<script language="javascript">
 
+
+
 		$(document).ready(function() {
 			var table = $('#emp-table').DataTable( {
 				"processing": true,
@@ -82,7 +92,8 @@
 					"orderable": false,
 					"width": "40px"						
 					
-				}]
+				}],
+				"order" : [[2,"desc"]]
 			});
 
 			// load data in text fields on button click
@@ -93,20 +104,28 @@
 				console.log($(this)[0].className);
 				
 				$('#t_number').val(data[0]);
+				$('#number_of_hours').val(data[3]);
+				$('#maximum_possible_score').val(data[4]);
 				$('#score').val(data[5]);
 				
 			});
 
-			
-
-			// edit test ajax call
-			$(document).on('submit', '#emp_edit_form', function(e){
+			document.getElementById("emp_edit_form").addEventListener("submit", (e) => {
+		if (document.getElementById("score").value > document.getElementById("maximum_possible_score").value){
+			alert("Score can not be greater than max score"); 	
+			e.preventDefault();
+			return false;
+		}
+		else{
+						// edit test ajax call
+				$(document).on('submit', '#emp_edit_form', function(e){
 				e.preventDefault();
 				$.ajax({
 					type:'POST',
 					url:'/updatescore/',
 					data: {
                         t_number : $('#t_number').val(),
+						number_of_hours : $('#number_of_hours').val(),
 						score : $('#score').val(),
 						csrfmiddlewaretoken: "{{csrf_token}}"
 						
@@ -122,6 +141,15 @@
 					}
 				})
 			});
+
+		}
+
+		});
+
+
+			
+
+
 
 		});
 
