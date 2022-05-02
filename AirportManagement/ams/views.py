@@ -117,8 +117,38 @@ def home(request):
     data_airworthy.append(unairworthy_count)
     label_airworthy.append("Not Airworthy")
 
+
+
+    count_query_stationed = "select count(*) from airplane where stationed_at is not null"
+    count_query_not_stationed = "select count(*) from airplane where stationed_at is null"
+    stationed_count = appdb_connection.execute_count(count_query_stationed)
+    not_stationed_count = appdb_connection.execute_count(count_query_not_stationed)
+    data_stationed = []
+    label_stationed = []
+    data_stationed.append(stationed_count)
+    label_stationed.append("Stationed in Airport")
+    data_stationed.append(not_stationed_count)
+    label_stationed.append("Not Stationed in Airport")
+
+
+
     label_tech = []
     data_tech = []
+    flag = ""
+    if request.session['role'] == 'traffic_controller':
+        query_warning = """select true as flag from traffic_controllers
+        where (current_date >= (DATE_ADD(most_recent_exam, INTERVAL 1 YEAR) - 7) 
+        or safety not in ('passed') or safety is null or most_recent_exam is null)
+        and  e_ssn = '{}'""".format(request.session['ssn'])
+        exec = appdb_connection.read_table(query_warning)
+        if exec.empty:
+            flag = "false"
+        else : 
+            flag = "true"
+     
+
+
+
     if request.session['role'] == 'technician':
         tech_querry = """select airplane.model_number, sum(number_of_hours) from test 
         left join airplane on test.registration_number = airplane.registration_number
@@ -137,13 +167,15 @@ def home(request):
             else:
                 data_tech.append(i)
             j+=1
-        
 
     return render(request, 'home.html', {
         'label_airworthy': label_airworthy,
         'data_airworthy': data_airworthy,
         'label_tech' : label_tech,
-        'data_tech' : data_tech
+        'data_tech' : data_tech,
+        'flag' : flag,
+        'label_stationed' : label_stationed,
+        'data_stationed' : data_stationed
     })
 
 @login_required(login_url='/login/')

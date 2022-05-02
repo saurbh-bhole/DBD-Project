@@ -2,19 +2,25 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 
+{% if request.session.role == "traffic_controller" and flag == "true" %}
+<h2 style="color:red; text-align: center;">Please update recent passed medical test</h2>
+{% endif %} 
 
-<h2>Dashboard:</h2>
+<h2 style="text-align: center;">Dashboard:</h2>
 <div id="container" style="display:flex; width: 50%;">
 
-  
-    <canvas id="pie-chart_airworthy"></canvas> 
+    <canvas id="pie-chart_airworthy"></canvas>
+
+    {% if request.session.role != "technician" %}
+    <canvas id="pie-chart_stationed"></canvas> 
+    {% endif %} 
+
     {% if request.session.role == "technician" %}
-    
     <canvas id="pie-chart_tech"></canvas> 
     {% endif %} 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+
   <script>
 
     var config_airworthy = {
@@ -24,7 +30,7 @@
           data: {{ data_airworthy|safe }},
           backgroundColor: [
             '#0000FF', '#FF0000', '#AF0320'],
-          label: 'Airworthy'    
+          label: 'Airworthy',  
         }],
         labels: {{ label_airworthy|safe }}
       },
@@ -33,6 +39,23 @@
       }
     };
 
+    var config_stationed = {
+      type: 'pie',
+      data: {
+        datasets: [{
+          data: {{ data_stationed|safe }},
+          backgroundColor: [
+            '#0000FF', '#FF0000', '#AF0320'],
+          label: 'Stationed',  
+        }],
+        labels: {{ label_stationed|safe }}
+      },
+      options: {
+        responsive: true
+      }
+    };
+
+   
     var config_tech = {
       type: 'pie',
       data: {
@@ -49,11 +72,17 @@
       }
     };
 
+
     window.onload = function() {
+
       var ctx_airworthy = document.getElementById('pie-chart_airworthy').getContext('2d');
       window.myPie = new Chart(ctx_airworthy, config_airworthy);
+      {% if request.session.role == "technician" %}
       var ctx_tech = document.getElementById('pie-chart_tech').getContext('2d');
       window.myPie = new Chart(ctx_tech, config_tech);
+      {% endif %}
+      var ctx_stationed = document.getElementById('pie-chart_stationed').getContext('2d');
+      window.myPie = new Chart(ctx_stationed, config_stationed);
     };
 
   </script>
