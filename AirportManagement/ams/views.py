@@ -1101,11 +1101,16 @@ def delete_union_details(request):
 
     query = """DELETE from `union` where `u_id` = '{}'
                 """.format(d_uid)
+
+    query_set_membership_null = """
+       update `employee` set `union_membership_number` = null where `u_id` is null
+    """
                                     
     print(query)
     try:
         appdb_connection = DBConnection('default')
         appdb_connection.execute_query(query)
+        appdb_connection.execute_query(query_set_membership_null)
 
     except Exception as e:
         print("Error occurred while saving data."
