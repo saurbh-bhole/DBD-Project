@@ -1984,7 +1984,11 @@ def get_test_details(request):
     - DB connection
     - renders DataTable
     """
-    header = ["t_number", "t_name", "date", "number_of_hours", "maximum_possible_score", "score", "registration_number", "faa_name", "tech_name"]
+    if request.session['role'] == "technician":
+        header = ["t_number", "t_name", "date", "number_of_hours", "maximum_possible_score", "score", "registration_number", "faa_name", "tech_name","stationed_at"]
+    else:
+        header = ["t_number", "t_name", "date", "number_of_hours", "maximum_possible_score", "score", "registration_number", "faa_name", "tech_name"]
+    
 
     # Extracting params from url
     try:
@@ -2012,15 +2016,16 @@ def get_test_details(request):
     if sort_col is None:
         if request.session["role"] ==  "technician":
             query = """
-            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name,
+            a.stationed_at
             from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
             left join employee e_tech on e_tech.e_ssn = t.tech_id
             left join airplane a on a.registration_number = t.registration_number
             WHERE (e_faa.username = '{}' or e_tech.username = '{}' and stationed_at is not NULL) and (
             LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
             or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
-            limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search, length, start)
+            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%' or LOWER(a.stationed_at) like '%{}%')
+            limit {} offset {}""".format(request.user.username, request.user.username, search, search, search,search, search, search,search, search, search,search, length, start)
         
         else:
             query = """
@@ -2038,15 +2043,15 @@ def get_test_details(request):
         sort_col = str(int(sort_col) + 1)
         if request.session["role"] ==  "technician":
             query = """
-            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name
+            SELECT t_number, t_name, date, number_of_hours, maximum_possible_score, score, t.registration_number, e_faa.e_name as faa_name, e_tech.e_name as tech_name,a.stationed_at
             from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
             left join employee e_tech on e_tech.e_ssn = t.tech_id
             left join airplane a on a.registration_number = t.registration_number
             WHERE (e_faa.username = '{}' or e_tech.username = '{}'  and stationed_at is not NULL) and (
             LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
             or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')order by {} {}
-            limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search, sort_col, sort_dir, length, start)
+            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%' or LOWER(a.stationed_at) like '%{}%')order by {} {}
+            limit {} offset {}""".format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search,search, sort_col, sort_dir, length, start)
 
         else:
             query = """
@@ -2078,8 +2083,8 @@ def get_test_details(request):
                             WHERE (e_faa.username = '{}' or e_tech.username = '{}' and stationed_at is not NULL) and (
                             LOWER(t_number) like '%{}%' or LOWER(t_name) like '%{}%' or LOWER(date) like '%{}%'
                             or LOWER(number_of_hours) like '%{}%' or LOWER(maximum_possible_score) like '%{}%' or LOWER(score) like '%{}%'
-                            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%')
-                            """.format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search)
+                            or LOWER(t.registration_number) like '%{}%' or LOWER(e_faa.e_name) like '%{}%' or LOWER(e_tech.e_name) like '%{}%' or LOWER(a.stationed_at) like '%{}%')
+                            """.format(request.user.username,request.user.username, search, search, search,search, search, search,search, search, search,search)
     
     else:        
         filtered_count_query = """SELECT count(*) from test t left join employee e_faa on e_faa.e_ssn=t.faa_id 
